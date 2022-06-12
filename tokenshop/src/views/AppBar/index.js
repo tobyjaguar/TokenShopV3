@@ -1,8 +1,12 @@
 import React, { useContext, useEffect, useState  } from 'react'
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
+import Fade from '@mui/material/Fade'
+import Alert from '@mui/material/Alert'
 
 import hex2dec from 'hex2dec'
 
@@ -10,6 +14,8 @@ import contractsContext from '../../context/Contracts/ContractsContext'
 
 import { groomWei } from '../../utils/groomBalance'
 import {shorten} from '../../utils/shortAddress'
+
+import { useAccount, useConnect, useDisconnect } from 'wagmi'
 
 //Styles
 import '../../App.css'
@@ -42,87 +48,45 @@ const TOKEN_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
 const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
 
 const MyAppBar = () => {
-  const [web3, setWeb3] = useState(null)
+  const [anchorEl, setAnchorEl] = useState(null)
   const [areWeConnected, setLocalConnection] = useState(false)
   const [shopAddress, setShopAddress] = useState('')
   const [tokenContract, setTokenContract] = useState(null)
-  //const [tokenBalance, setBalance] = useState('0')
-  const connected = false;
+
+  const open = Boolean(anchorEl)
+
+  const { account } = useAccount()
+
+  const {
+    connect,
+    connectors,
+    error,
+    isConnecting,
+    pendingConnector
+  } = useConnect()
+
+  const { disconnect } = useDisconnect()
 
   const {
     setContracts,
     contracts
   } = useContext(contractsContext)
 
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleClose = () => {
+      setAnchorEl(null)
+  }
+
   useEffect(() => {
     // fired on inital load of page
     setShopAddress(shorten(SHOP_ADDRESS))
   }, [])
 
-  const connect = async () => {
-      // try {
-      //     let provider = await web3Modal.connect()
-      //     let localWeb3 = new Web3(provider)
-      //
-      //     //register provider events
-      //     registerProvider(localWeb3)
-      //     let chainId = await localWeb3.eth.getChainId()
-      //
-      //     if (chainId.toString() === hex2dec.hexToDec(NETWORK_ID)) {
-      //       // continue with connection setup
-      //       setWeb3(localWeb3)
-      //       await setWalletProvider(localWeb3) // set provider to context
-      //       let accounts = await localWeb3.eth.getAccounts()
-      //       setAccount(accounts[0]) // set account to context
-      //       let localContract = new localWeb3.eth.Contract(TOKEN_ABI, TOKEN_ADDRESS)
-      //       setTokenContract(localContract)
-      //       setContracts(localWeb3) // set contracts to context
-      //       let balance = await localContract.methods.balanceOf(accounts[0]).call({from: accounts[0]})
-      //       setTokenBalance(balance) // set token balance to context
-      //       setConnected(true) // set connected to context
-      //     }
-      // }
-      // catch (ex) {
-      //   console.log(ex)
-      // }
-  }
-
-  const registerProvider = provider => {
-    // target supported chain ids
-    provider.currentProvider.request({
-      method: 'wallet_addEthereumChain',
-      params: [
-        {
-          chainId: NETWORK_ID,
-          chainName: NETWORK_NAME,
-          nativeCurrency: {
-            name: 'ETH',
-            symbol: 'ETH',
-            decimals: 18,
-          },
-          rpcUrls: [RPC_URL],
-          blockExplorerUrls: [EXPLORER_URL],
-        },
-      ],
-    });
-
-    // register MetaMask events
-    provider.currentProvider.on('accountsChanged', (accounts: string[]) => {
-      console.log('account changed', accounts[0])
-      // connect()
-    });
-
-    provider.currentProvider.on('chainChanged', (chainId: number) => {
-      console.log('chain changed', chainId)
-      // connect()
-      //window.location.reload();
-    });
-
-    provider.currentProvider.on('disconnect', (error: {code: number; message: string}) => {
-      console.log('the client has disconnected')
-      console.log(error)
-    });
-  }
+console.log(account)
+console.log(connectors)
 
   return (
     <AppBar style={style01} position='static'>
@@ -130,22 +94,71 @@ const MyAppBar = () => {
         <Typography style={style01} variant='subtitle1' color='inherit'>
             Shop Address: {shopAddress}
         </Typography>
-        {connected ?
-            <Typography style={style02} >
-              Balance: {groomWei(0)} TOBY
-            </Typography>
-          : <Typography style={style02} >
-              <Button
-                variant='contained'
-                onClick={async () => connect()}
-              >
-                Connect
-              </Button>
-            </Typography>
+
+        {(account) ?
+          <Typography style={style02} >
+            <div>{account.address}</div>
+            <div>Connected to {account.connector.name}</div>
+            <Button
+              variant='contained'
+              onClick={disconnect}
+            >
+              Disconnect
+            </Button>
+          </Typography>
+          :
+          <Typography style={style02} >
+          <Button
+            variant='contained'
+            onClick={handleClick}
+          >
+            Connect
+          </Button>
+          </Typography>
         }
+
+        <Menu
+          id='menu'
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          MenuListProps={{
+            'aria-labelledby': 'fade-button',
+          }}
+          TransitionComponent={Fade}
+        >
+        {connectors.map(connector => (
+          <MenuItem
+            key={connector.id}
+            variant='contained'
+            disabled={!connector.ready}
+            onClick={() => connect(connector)}
+          >
+            {connector.name}
+            {!connector.ready && ' (unsupported)'}
+            {isConnecting && connector.id === pendingConnector?.id && ' (connecting)'}
+          </MenuItem>
+        ))}
+        </Menu>
       </Toolbar>
+      {error && <Alert severity='error'>Error connecting wallet</Alert>}
     </AppBar>
   )
  }
+
+
+ // {connected ?
+ //     <Typography style={style02} >
+ //       Balance: {groomWei(0)} TOBY
+ //     </Typography>
+ //   : <Typography style={style02} >
+ //       <Button
+ //         variant='contained'
+ //         onClick={async () => connect()}
+ //       >
+ //         Connect
+ //       </Button>
+ //     </Typography>
+ // }
 
 export default MyAppBar

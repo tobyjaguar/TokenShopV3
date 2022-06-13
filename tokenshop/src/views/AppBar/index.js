@@ -13,7 +13,7 @@ import hex2dec from 'hex2dec'
 import contractsContext from '../../context/Contracts/ContractsContext'
 
 import { groomWei } from '../../utils/groomBalance'
-import {shorten} from '../../utils/shortAddress'
+import { shorten } from '../../utils/shortAddress'
 
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 
@@ -55,12 +55,13 @@ const MyAppBar = () => {
 
   const open = Boolean(anchorEl)
 
-  const { account } = useAccount()
+  const { account, data } = useAccount()
 
   const {
     connect,
     connectors,
     error,
+    isConnected,
     isConnecting,
     pendingConnector
   } = useConnect()
@@ -85,8 +86,9 @@ const MyAppBar = () => {
     setShopAddress(shorten(SHOP_ADDRESS))
   }, [])
 
-console.log(account)
-console.log(connectors)
+console.log(isConnected)
+console.log(data?.address)
+console.log('open: ', open)
 
   return (
     <AppBar style={style01} position='static'>
@@ -95,10 +97,8 @@ console.log(connectors)
             Shop Address: {shopAddress}
         </Typography>
 
-        {(account) ?
+        {(isConnected) ?
           <Typography style={style02} >
-            <div>{account.address}</div>
-            <div>Connected to {account.connector.name}</div>
             <Button
               variant='contained'
               onClick={disconnect}

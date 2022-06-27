@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { useAccount, useContract, useSigner } from 'wagmi'
+import { useAccount, useContract, useContractWrite, useSigner } from 'wagmi'
 
 //components
 import Button from '@mui/material/Button'
@@ -23,7 +23,7 @@ const TRFL_ADDRESS = process.env.REACT_APP_TRFL_TOKEN_CONTRACT_ADDRESS
 const USDC_ADDRESS = process.env.REACT_APP_USDC_TOKEN_CONTRACT_ADDRESS
 const USDT_ADDRESS = process.env.REACT_APP_USDT_TOKEN_CONTRACT_ADDRESS
 const DAI_ADDRESS = process.env.REACT_APP_DAI_TOKEN_CONTRACT_ADDRESS
-
+const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
 const APPROVAL_AMOUNT = process.env.REACT_APP_APPROVAL_AMOUNT
 
 const tokenABI = require('../../contracts/abi/TruffleToken.json')
@@ -43,20 +43,33 @@ const dialogStyles = {
 }
 
 const Approve = () => {
-  const [account, setAccount] = useState(false)
+  // const [account, setAccount] = useState(false)
   const [dialogOpen, setDialog] = useState(false)
   const [menuState, setMenuState] = useState(false)
   const [alertText, setText] = useState('')
   const [selectedToken, setSelectedToken] = useState('')
 
-  const { data } = useAccount()
+  const { data: account } = useAccount()
 
-  const provider = useSigner()
-  const truffleContract = useContract({
-    addressOrName: TRFL_ADDRESS,
-    contractInterface: tokenABI,
-    signerOrProvider: provider,
-  })
+  const { data: signer } = useSigner()
+
+  // instantiate contract approve functions
+  // const truffleContract = useContract({
+  //   addressOrName: TRFL_ADDRESS,
+  //   contractInterface: tokenABI,
+  //   signerOrProvider: signer,
+  // })
+
+  const { write: trflApprove } = useContractWrite(
+    {
+      addressOrName: TRFL_ADDRESS,
+      contractInterface: tokenABI,
+    },
+    'approve',
+    {
+      args:[SHOP_ADDRESS, APPROVAL_AMOUNT],
+    },
+  )
 
   const {
     contracts
@@ -82,20 +95,20 @@ const Approve = () => {
     setMenuState(false)
   }
 
-  const handleApproveButton = async () => {
+  const handleApproveButton = () => {
     if (selectedToken === '') {
       setText("Oops! Select a token to approve transfer.")
       handleDialogOpen()
     }
     else {
-      contracts.tokenShop.methods.approveTransfer(selectedToken,APPROVAL_AMOUNT)
-      .send({from: account})
-      .on('transactionHash', txHash => {
-        // setTransactions(txHash)
-      })
-      .on('error', err => {
-        console.log(err)
-      })
+      switch(selectedToken) {
+        case 'TRFL':
+          trflApprove()
+          break
+        default:
+          setText("Oops! something went wrong while trying to approve transfer.")
+          handleDialogOpen()
+      }
     }
   }
 

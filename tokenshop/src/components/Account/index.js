@@ -1,9 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 
 //components
-import Paper from '@material-ui/core/Paper'
-
-import walletContext from '../../context/WalletProvider/WalletProviderContext'
+import Paper from '@mui/material/Paper'
 
 import {groomWei} from '../../utils/groomBalance'
 

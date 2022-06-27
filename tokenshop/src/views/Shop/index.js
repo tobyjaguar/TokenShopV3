@@ -1,21 +1,21 @@
 import React, { useContext, useEffect, useState} from 'react'
+import { useAccount, useConnect } from 'wagmi'
 
-import Paper from '@material-ui/core/Paper'
-import Grid from '@material-ui/core/Grid'
-import Typography from '@material-ui/core/Typography'
-import Button from '@material-ui/core/Button'
-import Popover from '@material-ui/core/Popover'
-import Divider from '@material-ui/core/Divider'
+import Paper from '@mui/material/Paper'
+import Grid from '@mui/material/Grid'
+import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
+import Popover from '@mui/material/Popover'
+import Divider from '@mui/material/Divider'
 
-import TXModal from '../../components/TXModal'
-import Account from '../../components/Account'
+// import TXModal from '../../components/TXModal'
+// import Account from '../../components/Account'
 import Approve from '../../components/Approve'
-import ShopItem from '../../components/ShopItem'
-import BurnToken from '../../components/BurnToken'
-import TransferToken from '../../components/TransferToken'
-import Admin from '../../components/Admin'
+// import ShopItem from '../../components/ShopItem'
+// import BurnToken from '../../components/BurnToken'
+// import TransferToken from '../../components/TransferToken'
+// import Admin from '../../components/Admin'
 
-import walletContext from '../../context/WalletProvider/WalletProviderContext'
 import contractsContext from '../../context/Contracts/ContractsContext'
 
 import {groomWei} from '../../utils/groomBalance'
@@ -42,66 +42,63 @@ const Shop = () => {
   const [showAccount, setShowAccount] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
 
-  const {
-    connected,
-    account,
-    tokenBalance
-  } = useContext(walletContext)
+  const { data } = useAccount()
+  const { isConnected } = useConnect()
 
   const {
     contracts
   } = useContext(contractsContext);
-
-  useEffect(async () => {
-    if(connected) {
-      setName(await contracts.tokenShop.methods.getTokenName().call({from: account}))
-      setSymbol(await contracts.tokenShop.methods.getTokenSymbol().call({from: account}))
-      setStock(await contracts.tokenShop.methods.getShopStock().call({from: account}))
-      setOwner(await contracts.tokenShop.methods.owner().call({from: account}))
-    }
-  }, [connected])
+console.log(isConnected)
+  // useEffect(async () => {
+  //   if(isConnected) {
+  //     // setName(await contracts.tokenShop.methods.getTokenName().call({from: data?.address}))
+  //     // setSymbol(await contracts.tokenShop.methods.getTokenSymbol().call({from: data?.address}))
+  //     // setStock(await contracts.tokenShop.methods.getShopStock().call({from: data?.address}))
+  //     // setOwner(await contracts.tokenShop.methods.owner().call({from: data?.address}))
+  //   }
+  // }, [isConnected])
 
   const handlePopClose = () => {
     setPop(false)
   }
 
   const handleApproveButton = () => {
-    (connected) ?
+    (isConnected) ?
       setShowApprove(!showApprove)
     :
       setPop(true)
   }
 
   const handleTradeButton = () => {
-    (connected) ?
+    (isConnected) ?
       setShowTrade(!showTrade)
     :
       setPop(true)
   }
 
   const handleBurnButton = () => {
-    (connected) ?
+    (isConnected) ?
       setShowBurn(!showBurn)
     :
       setPop(true)
   }
 
   const handleTransferButton = () => {
-    (connected) ?
+    (isConnected) ?
       setShowTransfer(!showTransfer)
     :
       setPop(true)
   }
 
   const handleAccountButton = () => {
-    (connected) ?
+    (isConnected) ?
       setShowAccount(!showAccount)
     :
       setPop(true)
   }
 
   const handleAdminButton = () => {
-    (connected) ?
+    (isConnected) ?
       setShowAdmin(!showAdmin)
     :
       setPop(true)
@@ -117,7 +114,7 @@ const Shop = () => {
             <Typography style={styles}>
               Welcome to the Token Shop!
               {
-                connected ?
+                isConnected ?
                   <React.Fragment>
                     <br/>
                     <strong>Name: </strong> {name}
@@ -145,7 +142,7 @@ const Shop = () => {
               Please connect a MetaMask wallet!
             </Typography>
           </Popover>
-          <TXModal />
+
 
         <Grid item xs={12}>
           <Button type="Button" variant="contained" onClick={handleApproveButton}> Approve </Button>
@@ -155,54 +152,58 @@ const Shop = () => {
           {showApprove ? <Approve /> : null}
         </Grid>
 
-        <Grid item xs={12}>
-          <Button type="Button" variant="contained" onClick={handleTradeButton}> Trade </Button>
-        </Grid>
 
-        <Grid item xs={12}>
-          {showTrade ? <ShopItem /> : null}
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button type="Button" variant="contained" onClick={handleBurnButton}> Burn </Button>
-        </Grid>
-
-        <Grid item xs={12}>
-          {showBurn ? <BurnToken /> : null}
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button type="Button" variant="contained" onClick={handleTransferButton}> Transfer </Button>
-        </Grid>
-
-        <Grid item xs={12}>
-          {showTransfer ? <TransferToken /> : null}
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button type="Button" variant="contained" onClick={handleAccountButton}> Account </Button>
-        </Grid>
-
-        <Grid item xs={12}>
-          {showAccount ? <Account /> : null}
-        </Grid>
-
-        <Grid item xs={12}>
-        {connected ?
-            (owner === account) ?
-              <Button type="Button" variant="contained" onClick={handleAdminButton}> Admin </Button>
-            : null
-          : null
-        }
-        </Grid>
-
-        <Grid item xs={12}>
-          {showAdmin ? <Admin /> : null}
-        </Grid>
 
       </Grid>
     </main>
   )
 }
+
+// <TXModal />
+
+// <Grid item xs={12}>
+//   <Button type="Button" variant="contained" onClick={handleTradeButton}> Trade </Button>
+// </Grid>
+//
+// <Grid item xs={12}>
+//   {showTrade ? <ShopItem /> : null}
+// </Grid>
+//
+// <Grid item xs={12}>
+//   <Button type="Button" variant="contained" onClick={handleBurnButton}> Burn </Button>
+// </Grid>
+//
+// <Grid item xs={12}>
+//   {showBurn ? <BurnToken /> : null}
+// </Grid>
+//
+// <Grid item xs={12}>
+//   <Button type="Button" variant="contained" onClick={handleTransferButton}> Transfer </Button>
+// </Grid>
+//
+// <Grid item xs={12}>
+//   {showTransfer ? <TransferToken /> : null}
+// </Grid>
+//
+// <Grid item xs={12}>
+//   <Button type="Button" variant="contained" onClick={handleAccountButton}> Account </Button>
+// </Grid>
+//
+// <Grid item xs={12}>
+//   {showAccount ? <Account /> : null}
+// </Grid>
+//
+// <Grid item xs={12}>
+// {isConnected ?
+//     (owner === data?.address) ?
+//       <Button type="Button" variant="contained" onClick={handleAdminButton}> Admin </Button>
+//     : null
+//   : null
+// }
+// </Grid>
+//
+// <Grid item xs={12}>
+//   {showAdmin ? <Admin /> : null}
+// </Grid>
 
 export default Shop;

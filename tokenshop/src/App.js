@@ -7,6 +7,7 @@ import {
   defaultChains,
   configureChains
 } from 'wagmi'
+import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 
 // context
 import ContractsState from './context/Contracts/ContractsState'
@@ -14,12 +15,7 @@ import ContractsState from './context/Contracts/ContractsState'
 // components
 import MyAppBar from './views/AppBar'
 import Home from './views/Home'
-// import Shop from './views/Shop'
-
-import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet'
-import { InjectedConnector } from 'wagmi/connectors/injected'
-import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
-import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
+import Shop from './views/Shop'
 
 import { publicProvider } from 'wagmi/providers/public'
 import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
@@ -29,8 +25,8 @@ import { Buffer } from 'buffer'
 
 // Styles
 import './App.css'
+import '@rainbow-me/rainbowkit/styles.css'
 
-console.log(chain)
 const { chains, provider } = configureChains(
   [chain.arbitrum, chain.arbitrumRinkeby],
   [
@@ -42,6 +38,11 @@ const { chains, provider } = configureChains(
   ],
 )
 
+const { connectors } = getDefaultWallets({
+  appName: 'Token Shop',
+  chains
+})
+
 // polyfill Buffer for client
 if (!window.Buffer) {
   window.Buffer = Buffer
@@ -49,28 +50,7 @@ if (!window.Buffer) {
 
 const client = createClient({
   autoConnect: true,
-  connectors: [
-    new MetaMaskConnector({ chains }),
-    new CoinbaseWalletConnector({
-      chains,
-      options: {
-        appName: 'wagmi',
-      },
-    }),
-    new WalletConnectConnector({
-      chains,
-      options: {
-        qrcode: true,
-      },
-    }),
-    new InjectedConnector({
-      chains,
-      options: {
-        name: 'Injected',
-        shimDisconnect: true,
-      },
-    }),
-  ],
+  connectors,
   provider,
 })
 
@@ -78,27 +58,20 @@ const App = () => {
   return (
     <div className="App">
       <WagmiConfig client={client}>
+        <RainbowKitProvider chains={chains}>
         <ContractsState>
           <MyAppBar />
           <Router>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="shop" element={<Shop />} />
             </Routes>
           </Router>
         </ContractsState>
+        </RainbowKitProvider>
       </WagmiConfig>
     </div>
   )
 };
-
-// <ContractsState>
-//   <MyAppBar />
-//   <Router>
-//     <Routes>
-//       <Route path="/shop" component={Shop} />
-//       <Route exact path="/" component={Home} />
-//     </Routes>
-//   </Router>
-// </ContractsState>
 
 export default App;

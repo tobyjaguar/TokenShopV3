@@ -2,13 +2,13 @@ import React, { useContext, useEffect, useState } from 'react'
 import web3 from 'web3'
 
 //components
-import Paper from '@material-ui/core/Paper'
-import Button from '@material-ui/core/Button'
-import TextField from '@material-ui/core/TextField'
+import Paper from '@mui/material/Paper'
+import Button from '@mui/material/Button'
+import TextField from '@mui/material/TextField'
 
-import Dialog from '@material-ui/core/Dialog'
-import DialogTitle from '@material-ui/core/DialogTitle'
-import DialogActions from '@material-ui/core/DialogActions'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogActions from '@mui/material/DialogActions'
 
 import walletContext from '../../context/WalletProvider/WalletProviderContext'
 import contractsContext from '../../context/Contracts/ContractsContext'

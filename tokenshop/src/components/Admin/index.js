@@ -1,12 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react'
 
 //components
-import Paper from '@material-ui/core/Paper'
-import Grid from '@material-ui/core/Grid'
-import Button from '@material-ui/core/Button'
-import TextField from '@material-ui/core/TextField'
-import Divider from '@material-ui/core/Divider'
-import Typography from '@material-ui/core/Typography'
+import Paper from '@mui/material/Paper'
+import Grid from '@mui/material/Grid'
+import Button from '@mui/material/Button'
+import TextField from '@mui/material/TextField'
+import Divider from '@mui/material/Divider'
+import Typography from '@mui/material/Typography'
 
 import walletContext from '../../context/WalletProvider/WalletProviderContext'
 import contractsContext from '../../context/Contracts/ContractsContext'
@@ -69,7 +69,7 @@ const Admin = () => {
         setTokenSymbol(event.target.value)
         break;
       case 'tokenAddress':
-        setTokenNewAddress(event.target.value)
+        setNewTokenAddress(event.target.value)
         break;
       default:
     }

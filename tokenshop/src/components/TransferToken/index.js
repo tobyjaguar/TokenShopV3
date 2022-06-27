@@ -2,10 +2,10 @@ import React, { useContext, useEffect, useState } from 'react'
 import web3 from 'web3'
 
 //components
-import Button from '@material-ui/core/Button'
-import Paper from '@material-ui/core/Paper'
-import Dialog from '@material-ui/core/Dialog'
-import TextField from '@material-ui/core/TextField'
+import Button from '@mui/material/Button'
+import Paper from '@mui/material/Paper'
+import Dialog from '@mui/material/Dialog'
+import TextField from '@mui/material/TextField'
 
 import walletContext from '../../context/WalletProvider/WalletProviderContext'
 import contractsContext from '../../context/Contracts/ContractsContext'

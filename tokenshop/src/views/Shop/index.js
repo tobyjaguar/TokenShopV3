@@ -9,7 +9,7 @@ import Popover from '@mui/material/Popover'
 import Divider from '@mui/material/Divider'
 
 // import TXModal from '../../components/TXModal'
-// import Account from '../../components/Account'
+import Account from '../../components/Account'
 import Approve from '../../components/Approve'
 // import ShopItem from '../../components/ShopItem'
 // import BurnToken from '../../components/BurnToken'
@@ -152,7 +152,13 @@ console.log(isConnected)
           {showApprove ? <Approve /> : null}
         </Grid>
 
+        <Grid item xs={12}>
+          <Button type="Button" variant="contained" onClick={handleAccountButton}> Account </Button>
+        </Grid>
 
+        <Grid item xs={12}>
+          {showAccount ? <Account /> : null}
+        </Grid>
 
       </Grid>
     </main>

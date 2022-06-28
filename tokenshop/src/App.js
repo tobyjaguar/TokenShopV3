@@ -8,6 +8,7 @@ import {
   configureChains
 } from 'wagmi'
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
+import { ToastContainer } from 'react-toastify';
 
 // context
 import ContractsState from './context/Contracts/ContractsState'
@@ -26,6 +27,7 @@ import { Buffer } from 'buffer'
 // Styles
 import './App.css'
 import '@rainbow-me/rainbowkit/styles.css'
+import 'react-toastify/dist/ReactToastify.css';
 
 const { chains, provider } = configureChains(
   [chain.arbitrum, chain.arbitrumRinkeby],
@@ -59,6 +61,7 @@ const App = () => {
     <div className="App">
       <WagmiConfig client={client}>
         <RainbowKitProvider chains={chains}>
+        <ToastContainer position='bottom-right' />
         <ContractsState>
           <MyAppBar />
           <Router>

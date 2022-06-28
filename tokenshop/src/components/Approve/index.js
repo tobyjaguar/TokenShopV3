@@ -1,5 +1,9 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { useAccount, useContract, useContractWrite, useSigner } from 'wagmi'
+import React, { useEffect, useState } from 'react'
+import {
+  useContractWrite,
+  useWaitForTransaction
+} from 'wagmi'
+import { toast } from 'react-toastify'
 
 //components
 import Button from '@mui/material/Button'
@@ -10,13 +14,10 @@ import Popper from '@mui/material/Popper'
 import MenuList from '@mui/material/MenuList'
 import MenuItem from '@mui/material/MenuItem'
 
-// import TXModal from '../TXModal'
-
 import myTx from '../../assets/tx.json'
 
 import { groomWei } from '../../utils/groomBalance'
-
-import contractsContext from '../../context/Contracts/ContractsContext'
+import { shorten } from '../../utils/shortAddress'
 
 const TRFL_NAME = process.env.REACT_APP_TRFL_TOKEN_NAME
 const TRFL_ADDRESS = process.env.REACT_APP_TRFL_TOKEN_CONTRACT_ADDRESS
@@ -43,24 +44,13 @@ const dialogStyles = {
 }
 
 const Approve = () => {
-  // const [account, setAccount] = useState(false)
   const [dialogOpen, setDialog] = useState(false)
   const [menuState, setMenuState] = useState(false)
   const [alertText, setText] = useState('')
   const [selectedToken, setSelectedToken] = useState('')
 
-  const { data: account } = useAccount()
-
-  const { data: signer } = useSigner()
-
-  // instantiate contract approve functions
-  // const truffleContract = useContract({
-  //   addressOrName: TRFL_ADDRESS,
-  //   contractInterface: tokenABI,
-  //   signerOrProvider: signer,
-  // })
-
-  const { write: trflApprove } = useContractWrite(
+  // Truffle
+  const trflApprove = useContractWrite(
     {
       addressOrName: TRFL_ADDRESS,
       contractInterface: tokenABI,
@@ -71,13 +61,50 @@ const Approve = () => {
     },
   )
 
-  const {
-    contracts
-  } = useContext(contractsContext);
+  const waitForTrflApprove = useWaitForTransaction({
+    hash: trflApprove.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
 
-  // useEffect(() => {
-  //   setAccount(data?.address)
-  // }, [account])
+  // USDC
+  const { write: usdcApprove } = useContractWrite(
+    {
+      addressOrName: USDC_ADDRESS,
+      contractInterface: tokenABI,
+    },
+    'approve',
+    {
+      args:[SHOP_ADDRESS, APPROVAL_AMOUNT],
+    },
+  )
+
+  // USDT
+  const { write: usdtApprove } = useContractWrite(
+    {
+      addressOrName: USDT_ADDRESS,
+      contractInterface: tokenABI,
+    },
+    'approve',
+    {
+      args:[SHOP_ADDRESS, APPROVAL_AMOUNT],
+    },
+  )
+
+  // DAI stable coin
+  const { write: daiApprove } = useContractWrite(
+    {
+      addressOrName: DAI_ADDRESS,
+      contractInterface: tokenABI,
+    },
+    'approve',
+    {
+      args:[SHOP_ADDRESS, APPROVAL_AMOUNT],
+    },
+  )
 
   const handleDialogOpen = () => {
     setDialog(true)
@@ -95,7 +122,7 @@ const Approve = () => {
     setMenuState(false)
   }
 
-  const handleApproveButton = () => {
+  const handleApproveButton = async () => {
     if (selectedToken === '') {
       setText("Oops! Select a token to approve transfer.")
       handleDialogOpen()
@@ -103,7 +130,17 @@ const Approve = () => {
     else {
       switch(selectedToken) {
         case 'TRFL':
-          trflApprove()
+          await trflApprove.writeAsync()
+          console.log(waitForTrflApprove)
+          break
+        case 'USDC':
+          usdcApprove()
+          break
+        case 'USDT':
+          usdtApprove()
+          break
+        case 'DAI':
+          daiApprove()
           break
         default:
           setText("Oops! something went wrong while trying to approve transfer.")
@@ -111,6 +148,11 @@ const Approve = () => {
       }
     }
   }
+
+  const notifyError = (msg) => toast.error(msg);
+  const notifySuccess = (msg) => toast.success(
+    `approved! hash: ${shorten(msg.transactionHash)} block: ${msg.blockNumber}`
+  );
 
   return (
     <div>

@@ -71,7 +71,7 @@ const Approve = () => {
   })
 
   // USDC
-  const { write: usdcApprove } = useContractWrite(
+  const usdcApprove = useContractWrite(
     {
       addressOrName: USDC_ADDRESS,
       contractInterface: tokenABI,
@@ -82,8 +82,17 @@ const Approve = () => {
     },
   )
 
+  const waitForUsdcApprove = useWaitForTransaction({
+    hash: usdcApprove.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
+
   // USDT
-  const { write: usdtApprove } = useContractWrite(
+  const usdtApprove = useContractWrite(
     {
       addressOrName: USDT_ADDRESS,
       contractInterface: tokenABI,
@@ -94,8 +103,17 @@ const Approve = () => {
     },
   )
 
+  const waitForUsdtApprove = useWaitForTransaction({
+    hash: usdtApprove.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
+
   // DAI stable coin
-  const { write: daiApprove } = useContractWrite(
+  const daiApprove = useContractWrite(
     {
       addressOrName: DAI_ADDRESS,
       contractInterface: tokenABI,
@@ -106,6 +124,15 @@ const Approve = () => {
     },
   )
 
+  const waitForDaiApprove = useWaitForTransaction({
+    hash: daiApprove.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
+
   const handleDialogOpen = () => {
     setDialog(true)
   }
@@ -113,6 +140,7 @@ const Approve = () => {
   const handleDialogClose = () => {
     setDialog(false)
   }
+
   const openMenu = () => {
     setMenuState(true)
   }
@@ -133,13 +161,13 @@ const Approve = () => {
           await trflApprove.writeAsync()
           break
         case 'USDC':
-          usdcApprove()
+          await usdcApprove.writeAsync()
           break
         case 'USDT':
-          usdtApprove()
+          await usdtApprove.writeAsync()
           break
         case 'DAI':
-          daiApprove()
+          await daiApprove.writeAsync()
           break
         default:
           setText("Oops! something went wrong while trying to approve transfer.")

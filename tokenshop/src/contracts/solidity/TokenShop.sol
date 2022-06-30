@@ -1,6 +1,7 @@
 pragma solidity ^0.5.17;
 
-import './SafeMath.sol';
+// ShopMath is SafeMath with a 0.5.17 pragma
+import './ShopMath.sol';
 
 interface Token {
   function totalSupply() external view returns (uint256);
@@ -20,7 +21,7 @@ interface Token {
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Ownable {
-  address private _owner;
+  address private owner;
 
   event OwnershipRenounced(address indexed previousOwner);
   event OwnershipTransferred(
@@ -33,14 +34,14 @@ contract Ownable {
    * account.
    */
   constructor() public {
-    _owner = msg.sender;
+    owner = msg.sender;
   }
 
   /**
    * @return the address of the owner.
    */
-  function owner() public view returns(address) {
-    return _owner;
+  function getOwner() public view returns(address) {
+    return owner;
   }
 
   /**
@@ -55,7 +56,7 @@ contract Ownable {
    * @return true if `msg.sender` is the owner of the contract.
    */
   function isOwner() public view returns(bool) {
-    return msg.sender == _owner;
+    return msg.sender == owner;
   }
 
   /**
@@ -65,26 +66,26 @@ contract Ownable {
    * modifier anymore.
    */
   function renounceOwnership() public onlyOwner {
-    emit OwnershipRenounced(_owner);
-    _owner = address(0);
+    emit OwnershipRenounced(owner);
+    owner = address(0);
   }
 
   /**
    * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
+   * @param newOwner_ The address to transfer ownership to.
    */
-  function transferOwnership(address newOwner) public onlyOwner {
-    _transferOwnership(newOwner);
+  function transferOwnership(address newOwner_) public onlyOwner {
+    _transferOwnership(newOwner_);
   }
 
   /**
    * @dev Transfers control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
+   * @param newOwner_ The address to transfer ownership to.
    */
-  function _transferOwnership(address newOwner) internal {
-    require(newOwner != address(0));
-    emit OwnershipTransferred(_owner, newOwner);
-    _owner = newOwner;
+  function _transferOwnership(address newOwner_) internal {
+    require(newOwner_ != address(0));
+    emit OwnershipTransferred(owner, newOwner_);
+    owner = newOwner_;
   }
 }
 
@@ -99,9 +100,9 @@ contract TokenShop is Ownable {
   event LogDeposit(address eSender, uint256 eValue);
   event LogWithdraw(address eSender, uint256 eValue);
 
-  constructor(string memory _name, address _instance) public {
-     native = _name;
-     tokens[native] = _instance;
+  constructor(string memory name_, address instance_) public {
+     native = name_;
+     tokens[native] = instance_;
   }
 
   //Token functions
@@ -114,13 +115,13 @@ contract TokenShop is Ownable {
     return tokenContract.totalSupply();
   }
 
-  function getTokenBalance(address _account)
+  function getTokenBalance(address account_)
     public
     view
     returns (uint256)
   {
     Token tokenContract = Token(tokens[native]);
-    return tokenContract.balanceOf(_account);
+    return tokenContract.balanceOf(account_);
   }
 
   function getTokenName()
@@ -151,34 +152,23 @@ contract TokenShop is Ownable {
   }
 
   //User functions
-    function approveTransfer(string memory _name, uint256 _amount)
-    public
-    returns (bool)
- {
-    //check stable token known to shop
-    require(tokens[_name] != address(0), "stable token not recognized");
-    Token tokenContract = Token(tokens[_name]);
-    tokenContract.approve(address(this), _amount);
-    emit LogApproval(msg.sender, _amount);
-    return true;
- }
 
-  function buyToken(string memory _name, uint256 _amount)
+  function buyToken(string memory name_, uint256 amount_)
     public
     returns (bool)
   {
     // check stable token known to shop
-    require(tokens[_name] != address(0), "stable token not recognized");
+    require(tokens[name_] != address(0), "stable token not recognized");
     Token nativeTokenContract = Token(tokens[native]);
-    Token stableTokenContract = Token(tokens[_name]);
+    Token stableTokenContract = Token(tokens[name_]);
     //check not asking for more than shop balance
-    require(nativeTokenContract.balanceOf(address(this)) >= _amount, "insufficient shop balance");
+    require(nativeTokenContract.balanceOf(address(this)) >= amount_, "insufficient shop balance");
     //check not asking for more than user blaance
-    require(stableTokenContract.balanceOf(msg.sender) >= _amount, "insufficient user balance");
-    require(stableTokenContract.allowance(msg.sender, address(this)) >= _amount, "insufficient allowance");
-    require(stableTokenContract.transferFrom(msg.sender, address(this), _amount), "stable token transfer failed");
-    require(nativeTokenContract.transfer(msg.sender, _amount), "native token transfer filed");
-    emit LogBuyToken(msg.sender, _amount);
+    require(stableTokenContract.balanceOf(msg.sender) >= amount_, "insufficient user balance");
+    require(stableTokenContract.allowance(msg.sender, address(this)) >= amount_, "insufficient allowance");
+    require(stableTokenContract.transferFrom(msg.sender, address(this), amount_), "stable token transfer failed");
+    require(nativeTokenContract.transfer(msg.sender, amount_), "native token transfer filed");
+    emit LogBuyToken(msg.sender, amount_);
     return true;
   }
 
@@ -192,44 +182,53 @@ contract TokenShop is Ownable {
     return nativeTokenContract.balanceOf(address(this));
   }
 
-  function getStableToken(string memory name)
+  function getStableToken(string memory name_)
     public
     view
     returns (address)
   {
-    return tokens[name];
+    return tokens[name_];
+  }
+
+  function getStableAllowance(string memory name_)
+    public
+    view
+    returns (uint256)
+  {
+    Token stableTokenContract = Token(tokens[name_]);
+    return stableTokenContract.allowance(msg.sender, address(this));
   }
 
   // Admin Functions
-  function setStableToken(string memory _name, address _address)
+  function setStableToken(string memory name_, address address_)
     onlyOwner
     public
     returns (bool)
   {
-    tokens[_name] = _address;
+    tokens[name_] = address_;
     return true;
   }
 
-  function deposit(uint256 _amount)
+  function deposit(uint256 amount_)
     onlyOwner
     public
     returns (bool)
   {
     Token nativeTokenContract = Token(tokens[native]);
-    require(nativeTokenContract.transferFrom(msg.sender, address(this), _amount), "transfer failed");
-    emit LogDeposit(msg.sender, _amount);
+    require(nativeTokenContract.transferFrom(msg.sender, address(this), amount_), "transfer failed");
+    emit LogDeposit(msg.sender, amount_);
     return true;
   }
 
-  function withdraw(string memory _name, uint256 _amount)
+  function withdraw(string memory name_, uint256 amount_)
     onlyOwner
     public
     returns (bool)
   {
-    Token tokenContract = Token(tokens[_name]);
-    require(tokenContract.balanceOf(address(this)) >= _amount, "insufficient balance");
-    require(tokenContract.transfer(msg.sender, _amount), "transfer failed");
-    emit LogWithdraw(msg.sender, _amount);
+    Token tokenContract = Token(tokens[name_]);
+    require(tokenContract.balanceOf(address(this)) >= amount_, "insufficient balance");
+    require(tokenContract.transfer(msg.sender, amount_), "transfer failed");
+    emit LogWithdraw(msg.sender, amount_);
     return true;
   }
 

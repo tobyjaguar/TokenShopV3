@@ -15,7 +15,7 @@ export function convertAmount(amount) {
 
 export function withDecimal(amount) {
   var amountBN = BigNumber.from(amount)
-  var oneEth = BigNumber.from(utils.formatEther('1', 'ether'));
+  var oneEth = BigNumber.from(utils.parseUnits('1', 'ether'));
   var whole
   var decimal
   if (amountBN.lt(oneEth)) {

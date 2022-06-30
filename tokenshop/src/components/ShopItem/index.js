@@ -1,21 +1,31 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { BigNumber, utils } from 'ethers'
-import { useContractRead } from 'wagmi'
+import {
+  useContract,
+  useContractWrite,
+  useProvider,
+  useWaitForTransaction } from 'wagmi'
+import { toast } from 'react-toastify'
 
 //components
 import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import Dialog from '@mui/material/Dialog'
 import TextField from '@mui/material/TextField'
+import MenuList from '@mui/material/MenuList'
+import MenuItem from '@mui/material/MenuItem'
+
 import ContractDetails from '../ContractDetails'
 
 import { groomWei } from '../../utils/groomBalance'
+import { shorten } from '../../utils/shortAddress'
 import { convertAmount, withDecimal } from '../../utils/purchaseAmount'
 
 const TOKEN_NAME = process.env.REACT_APP_TRFL_TOKEN_NAME
 const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
 const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
 const tokenABI = require('../../contracts/abi/ERC20TobyToken.json')
+const shopABI = require('../../contracts/abi/TokenShop.json')
 
 //inline styles
 const styles = {
@@ -31,45 +41,56 @@ const dialogStyles = {
   }
 }
 
-const ShopItem = ({ account, shopAddress }) => {
+const ShopItem = ({ account, shopAddress, name, symbol }) => {
   const [dialogOpen, setDialog] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
-  const [tokenName, setTokenName] = useState('')
-  const [tokenSymbol, setTokenSymbol] = useState('')
   const [decimals, setDecimals] = useState('18')
   const [weiAmount, setWeiAmount] = useState('0')
   const [buyAmount, setBuyAmount] = useState('0')
-  const [alertText, setText] = useState('')
+  const [menuState, setMenuState] = useState(false)
   const [selectedToken, setSelectedToken] = useState('')
   const [allowance, setAllowance] = useState('0')
+  const [alertText, setText] = useState('')
 
-  const readAllowance = useContractRead(
+  // need to get allowance for the selected collateral
+  const provider = useProvider()
+  const contract = useContract({
+      addressOrName: SHOP_ADDRESS,
+      contractInterface: shopABI,
+      signerOrProvider: provider
+  })
+
+  // buy with selected token
+  const purchaseTx = useContractWrite(
     {
-      addressOrName: TOBY_ADDRESS,
-      contractInterface: tokenABI
+      addressOrName: SHOP_ADDRESS,
+      contractInterface: shopABI,
     },
-    'allowance',
+    'buyToken',
     {
-      args: [account.address, SHOP_ADDRESS],
-      onSuccess(data) {
-        setAllowance(data.toString())
-      },
+      args:[selectedToken, weiAmount],
     },
   )
 
-  // useEffect(async () => {
-  //   // initial load
-  //   if (connected) {
-  //     setDecimals(await contracts.tokenShop.methods.getTokenDecimals().call({from: account}))
-  //     setTokenName(await contracts.tokenShop.methods.getTokenName().call({from: account}))
-  //     setTokenSymbol(await contracts.tokenShop.methods.getTokenSymbol().call({from: account}))
-  //     setAllowance(
-  //       await contracts.truffleToken.methods.allowance(account, contracts.tokenShop._address)
-  //       .call({from: account})
-  //     )
-  //     setSelectedToken(TOKEN_NAME)
-  //   }
-  // }, [])
+  const waitForPurchaseTx = useWaitForTransaction({
+    hash: purchaseTx.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
+
+  useEffect (() => {
+    async function getAllowance() {
+      let allowanceBN = await contract.getStableAllowance(
+          selectedToken,
+          {from: account.address}
+        )
+      setAllowance(allowanceBN.toString())
+    }
+    if (selectedToken !== '') getAllowance()
+  }, [selectedToken])
 
   const handleDialogOpen = () => {
     setDialog(true)
@@ -77,6 +98,15 @@ const ShopItem = ({ account, shopAddress }) => {
 
   const handleDialogClose = () => {
     setDialog(false)
+  }
+
+  const openMenu = () => {
+    setMenuState(true)
+  }
+
+  const handleMenu = (choice) => {
+    setSelectedToken(choice)
+    setMenuState(false)
   }
 
   const handleInputChange = (event) => {
@@ -99,20 +129,16 @@ const ShopItem = ({ account, shopAddress }) => {
     let zero = BigNumber.from(0)
     let allowanceBN = BigNumber.from(allowance)
     let amountBN = BigNumber.from(weiAmount)
-    if (allowanceBN.lt(amountBN)) {
+    if (selectedToken === '') {
+      setText("Oops! Select a payment token.")
+      handleDialogOpen()
+    }
+    else if (allowanceBN.lt(amountBN)) {
       setText("Oops! Check approval amount.")
       handleDialogOpen()
     }
     else if (amountBN.gt(zero)) {
-      // contracts.tokenShop.methods.buyToken(selectedToken,weiAmount)
-      // .send({from: account})
-      // .on('transactionHash', txHash => {
-      //   setTransactions(txHash)
-      // })
-      // .on('error', err => {
-      //   console.log(err)
-      // })
-      console.log('buying token')
+      await purchaseTx.writeAsync()
     } else {
       setText("Oops! Check purchase amount.")
       handleDialogOpen()
@@ -123,7 +149,10 @@ const ShopItem = ({ account, shopAddress }) => {
     setInfoOpen(!infoOpen)
   }
 
-  // console.log(allowance)
+  const notifyError = (msg) => toast.error(msg);
+  const notifySuccess = (msg) => toast.success(
+    `purchased! hash: ${shorten(msg.transactionHash)} block: ${msg.blockNumber}`
+  );
 
   return (
     <div>
@@ -140,19 +169,28 @@ const ShopItem = ({ account, shopAddress }) => {
             variant='outlined'
             style={{margin: '5% auto'}}
           />
+          <p>Payment:</p>
+          <MenuList>
+            <MenuItem onClick={() => handleMenu('TRFL')}>Tuffle (TRFL)</MenuItem>
+            <MenuItem onClick={() => handleMenu('USDC')}>US Dollar Coin (USDC)</MenuItem>
+            <MenuItem onClick={() => handleMenu('USDT')}>US Dollar Tether (USDT)</MenuItem>
+            <MenuItem onClick={() => handleMenu('DAI')}>Dai Stable Coin (DAI)</MenuItem>
+          </MenuList>
+
           <br/>
           <Button type="Button" variant="contained" onClick={handleBuyButton}>Buy</Button>
         </form>
 
-      <p>Total: {buyAmount} USDC </p>
+      <p>Total: {buyAmount} {selectedToken} </p>
+      <p>Able to spend: {utils.formatEther(allowance)} {selectedToken} </p>
       <p>Purchase Amount: {buyAmount} TOBY </p>
       <br/>
       <Button type="Button" variant="contained" onClick={handleShowStateButton}>More Info</Button>
       {infoOpen ?
         <ContractDetails
           address={shopAddress}
-          name={tokenName}
-          symbol={tokenSymbol}
+          name={name.data}
+          symbol={symbol.data}
           total={withDecimal(weiAmount)}
         />
         : null

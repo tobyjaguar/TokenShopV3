@@ -198,6 +198,8 @@ const Shop = () => {
             <ShopItem
               account={account}
               shopAddress={SHOP_ADDRESS}
+              name={shopName}
+              symbol={shopSymbol}
             /> :
             null
           }

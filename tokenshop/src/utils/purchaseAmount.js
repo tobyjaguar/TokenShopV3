@@ -5,11 +5,11 @@ export function convertAmount(amount) {
   var dec = Math.round((amount - int) * 100);
   var intBN = BigNumber.from(int);
   var decBN = BigNumber.from(dec);
-  var weiDec = BigNumber.from(utils.formatUnits('1', 'ether'));
+  var weiDec = utils.parseEther('1');
   var hundredBN = BigNumber.from('100')
   decBN = decBN.mul(weiDec).div(hundredBN);
-  var intEth = utils.formatUnits(intBN, 'ether');
-  var decEth = utils.formatEther(decBN, 'ether');
+  var intEth = utils.parseUnits(intBN.toString(), 'ether');
+  var decEth = utils.parseEther(decBN.toString(), 'ether');
   return intEth.add(decBN).toString();
 }
 

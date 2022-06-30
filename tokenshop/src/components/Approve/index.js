@@ -131,7 +131,6 @@ const Approve = () => {
       switch(selectedToken) {
         case 'TRFL':
           await trflApprove.writeAsync()
-          console.log(waitForTrflApprove)
           break
         case 'USDC':
           usdcApprove()

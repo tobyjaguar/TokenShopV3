@@ -1,5 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react'
-import web3 from 'web3'
+import React, { useState } from 'react'
+import { BigNumber, utils } from 'ethers'
+import {
+  useContractWrite,
+  useWaitForTransaction
+} from 'wagmi'
+import { toast } from 'react-toastify'
 
 //components
 import Paper from '@mui/material/Paper'
@@ -10,10 +15,13 @@ import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogActions from '@mui/material/DialogActions'
 
-import walletContext from '../../context/WalletProvider/WalletProviderContext'
-import contractsContext from '../../context/Contracts/ContractsContext'
+import { groomWei } from '../../utils/groomBalance'
+import { shorten } from '../../utils/shortAddress'
 
-import {groomWei} from '../../utils/groomBalance'
+const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
+const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
+
+const tokenABI = require('../../contracts/abi/ERC20TobyToken.json')
 
 //inline styles
 const styles = {
@@ -28,50 +36,54 @@ const dialogStyles = {
   }
 }
 
-const BN = web3.utils.BN
-
-const BurnToken = () => {
+const BurnToken = ({ tokenBalance }) => {
   const [dialogOpen, setDialog] = useState(false)
   const [dialogBurnOpen, setDialogBurn] = useState(false)
   const [recipient, setRecipient] = useState('')
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState('0')
   const [alertText, setAlert] = useState('')
 
-  const {
-    connected,
-    providerContext,
-    account,
-    tokenBalance
-  } = useContext(walletContext);
+  // TOBY token contract
+  const contract = useContractWrite(
+    {
+      addressOrName: TOBY_ADDRESS,
+      contractInterface: tokenABI,
+    },
+    'burn',
+    {
+      args:[amount],
+    },
+  )
 
-  const {
-    contracts
-  } = useContext(contractsContext);
-
-  useEffect(async () => {
-    // initial load
-  }, [])
+  const waitForBurnTx = useWaitForTransaction({
+    hash: contract.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
 
   const setTXParamValue = (_value) => {
-    if (web3.utils.isBN(_value)) {
+    if (BigNumber.isBigNumber(_value)) {
       setAmount(_value.toString())
     } else {
-      setAmount('')
+      setAmount('0')
     }
   }
 
   const handleInputChange = (event) => {
     if (event.target.value.match(/^[0-9]{1,40}$/)) {
-      var amount = new BN(event.target.value)
+      var amount = BigNumber.from(event.target.value)
       if (amount.gte(0)) {
         setAmount(amount.toString())
         setTXParamValue(amount)
       } else {
-        setAmount('')
+        setAmount('0')
         setTXParamValue(0)
       }
     } else {
-        setAmount('')
+        setAmount('0')
         setTXParamValue(0)
       }
   }
@@ -92,12 +104,12 @@ const BurnToken = () => {
     setDialogBurn(false)
   }
 
-  const handleBurnButton = () => {
-    var amountBN = new BN(amount)
-    var balanceBN = new BN(tokenBalance)
+  const handleBurnButton = async () => {
+    var amountBN = BigNumber.from(amount)
+    var balanceBN = tokenBalance.value
     if(amountBN.lte(balanceBN)) {
       handleDialogBurnClose()
-      contracts.tobyToken.methods.burn(amount).send({from: account})
+      await contract.writeAsync()
     } else if (amountBN.gt(balanceBN)) {
       handleDialogBurnClose()
       setAlert('Oops! You are trying to burn more than you have.')
@@ -110,15 +122,21 @@ const BurnToken = () => {
   }
 
   const handleSetMaxButton = () => {
-    setAmount(tokenBalance)
+    setAmount(tokenBalance.value.toString())
   }
 
-  let transferGroomed = groomWei(amount)
+  const notifyError = (msg) => toast.error(msg);
+  const notifySuccess = (msg) => toast.success(
+    `approved! hash: ${shorten(msg.transactionHash)} block: ${msg.blockNumber}`
+  );
+
+  // let transferGroomed = groomWei(amount)
+  let transferGroomed = utils.formatEther(amount)
 
   return (
     <div>
       <Paper style={styles} elevation={5}>
-        <p>Balance: {tokenBalance}</p>
+        <p>Balance: {tokenBalance.formatted}</p>
         <p><Button type="Button" variant="contained" onClick={handleSetMaxButton}>Use Balance</Button></p>
 
         <form className="pure-form">

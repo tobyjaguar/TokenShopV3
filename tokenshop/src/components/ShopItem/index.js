@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from 'react'
-
-import web3 from 'web3'
+import React, { useState } from 'react'
+import { BigNumber, utils } from 'ethers'
+import { useContractRead } from 'wagmi'
 
 //components
 import Button from '@mui/material/Button'
@@ -12,11 +12,10 @@ import ContractDetails from '../ContractDetails'
 import { groomWei } from '../../utils/groomBalance'
 import { convertAmount, withDecimal } from '../../utils/purchaseAmount'
 
-import transactionsContext from '../../context/Transactions/TransactionsContext'
-import walletContext from '../../context/WalletProvider/WalletProviderContext'
-import contractsContext from '../../context/Contracts/ContractsContext'
-
 const TOKEN_NAME = process.env.REACT_APP_TRFL_TOKEN_NAME
+const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
+const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
+const tokenABI = require('../../contracts/abi/ERC20TobyToken.json')
 
 //inline styles
 const styles = {
@@ -32,7 +31,7 @@ const dialogStyles = {
   }
 }
 
-const ShopItem = () => {
+const ShopItem = ({ account, shopAddress }) => {
   const [dialogOpen, setDialog] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
   const [tokenName, setTokenName] = useState('')
@@ -42,36 +41,35 @@ const ShopItem = () => {
   const [buyAmount, setBuyAmount] = useState('0')
   const [alertText, setText] = useState('')
   const [selectedToken, setSelectedToken] = useState('')
-  const [allowance, setAllowance] = useState('')
+  const [allowance, setAllowance] = useState('0')
 
-  const {
-    setTransactions
-  } = useContext(transactionsContext);
+  const readAllowance = useContractRead(
+    {
+      addressOrName: TOBY_ADDRESS,
+      contractInterface: tokenABI
+    },
+    'allowance',
+    {
+      args: [account.address, SHOP_ADDRESS],
+      onSuccess(data) {
+        setAllowance(data.toString())
+      },
+    },
+  )
 
-  const {
-    connected,
-    providerContext,
-    account,
-    tokenBalance
-  } = useContext(walletContext)
-
-  const {
-    contracts
-  } = useContext(contractsContext)
-
-  useEffect(async () => {
-    // initial load
-    if (connected) {
-      setDecimals(await contracts.tokenShop.methods.getTokenDecimals().call({from: account}))
-      setTokenName(await contracts.tokenShop.methods.getTokenName().call({from: account}))
-      setTokenSymbol(await contracts.tokenShop.methods.getTokenSymbol().call({from: account}))
-      setAllowance(
-        await contracts.truffleToken.methods.allowance(account, contracts.tokenShop._address)
-        .call({from: account})
-      )
-      setSelectedToken(TOKEN_NAME)
-    }
-  }, [])
+  // useEffect(async () => {
+  //   // initial load
+  //   if (connected) {
+  //     setDecimals(await contracts.tokenShop.methods.getTokenDecimals().call({from: account}))
+  //     setTokenName(await contracts.tokenShop.methods.getTokenName().call({from: account}))
+  //     setTokenSymbol(await contracts.tokenShop.methods.getTokenSymbol().call({from: account}))
+  //     setAllowance(
+  //       await contracts.truffleToken.methods.allowance(account, contracts.tokenShop._address)
+  //       .call({from: account})
+  //     )
+  //     setSelectedToken(TOKEN_NAME)
+  //   }
+  // }, [])
 
   const handleDialogOpen = () => {
     setDialog(true)
@@ -95,26 +93,26 @@ const ShopItem = () => {
         setBuyAmount(0)
         setWeiAmount('0')
       }
-
   }
 
   const handleBuyButton = async () => {
-    let zero = web3.utils.toBN(0)
-    let allowanceBN = web3.utils.toBN(allowance)
-    let amountBN = web3.utils.toBN(weiAmount)
+    let zero = BigNumber.from(0)
+    let allowanceBN = BigNumber.from(allowance)
+    let amountBN = BigNumber.from(weiAmount)
     if (allowanceBN.lt(amountBN)) {
       setText("Oops! Check approval amount.")
       handleDialogOpen()
     }
     else if (amountBN.gt(zero)) {
-      contracts.tokenShop.methods.buyToken(selectedToken,weiAmount)
-      .send({from: account})
-      .on('transactionHash', txHash => {
-        setTransactions(txHash)
-      })
-      .on('error', err => {
-        console.log(err)
-      })
+      // contracts.tokenShop.methods.buyToken(selectedToken,weiAmount)
+      // .send({from: account})
+      // .on('transactionHash', txHash => {
+      //   setTransactions(txHash)
+      // })
+      // .on('error', err => {
+      //   console.log(err)
+      // })
+      console.log('buying token')
     } else {
       setText("Oops! Check purchase amount.")
       handleDialogOpen()
@@ -124,7 +122,9 @@ const ShopItem = () => {
   const handleShowStateButton = () => {
     setInfoOpen(!infoOpen)
   }
-console.log(allowance)
+
+  // console.log(allowance)
+
   return (
     <div>
       <Paper style={styles} elevation={5}>
@@ -150,7 +150,7 @@ console.log(allowance)
       <Button type="Button" variant="contained" onClick={handleShowStateButton}>More Info</Button>
       {infoOpen ?
         <ContractDetails
-          address={contracts.tokenShop._address}
+          address={shopAddress}
           name={tokenName}
           symbol={tokenSymbol}
           total={withDecimal(weiAmount)}

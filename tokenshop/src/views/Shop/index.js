@@ -1,5 +1,10 @@
 import React, { useContext, useEffect, useState} from 'react'
-import { useAccount, useConnect } from 'wagmi'
+import {
+  useAccount,
+  useBalance,
+  useContractRead,
+  useConnect
+} from 'wagmi'
 
 import Paper from '@mui/material/Paper'
 import Grid from '@mui/material/Grid'
@@ -11,14 +16,18 @@ import Divider from '@mui/material/Divider'
 // import TXModal from '../../components/TXModal'
 import Account from '../../components/Account'
 import Approve from '../../components/Approve'
-// import ShopItem from '../../components/ShopItem'
-// import BurnToken from '../../components/BurnToken'
-// import TransferToken from '../../components/TransferToken'
+import ShopItem from '../../components/ShopItem'
+import BurnToken from '../../components/BurnToken'
+import TransferToken from '../../components/TransferToken'
 // import Admin from '../../components/Admin'
 
 import contractsContext from '../../context/Contracts/ContractsContext'
 
-import {groomWei} from '../../utils/groomBalance'
+import { groomWei } from '../../utils/groomBalance'
+
+const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
+const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
+const shopABI = require('../../contracts/abi/TokenShop.json')
 
 //inline styles
 const styles = {
@@ -42,21 +51,50 @@ const Shop = () => {
   const [showAccount, setShowAccount] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
 
-  const { data } = useAccount()
+  const { data: account } = useAccount()
+
+  const { data: ethBalance } = useBalance({
+    addressOrName: account?.address,
+    watch: true,
+  })
+
+  const { data: tokenBalance } = useBalance({
+    addressOrName: account?.address,
+    token: TOBY_ADDRESS,
+    watch: true,
+  })
+
   const { isConnected } = useConnect()
+
+  const shopName = useContractRead(
+    {
+      addressOrName: SHOP_ADDRESS,
+      contractInterface: shopABI
+    },
+    'getTokenName',
+  )
+
+  const shopSymbol = useContractRead(
+    {
+      addressOrName: SHOP_ADDRESS,
+      contractInterface: shopABI
+    },
+    'getTokenSymbol',
+  )
+
+  const shopCount = useContractRead(
+    {
+      addressOrName: SHOP_ADDRESS,
+      contractInterface: shopABI
+    },
+    'getShopStock',
+  )
 
   const {
     contracts
   } = useContext(contractsContext);
-console.log(isConnected)
-  // useEffect(async () => {
-  //   if(isConnected) {
-  //     // setName(await contracts.tokenShop.methods.getTokenName().call({from: data?.address}))
-  //     // setSymbol(await contracts.tokenShop.methods.getTokenSymbol().call({from: data?.address}))
-  //     // setStock(await contracts.tokenShop.methods.getShopStock().call({from: data?.address}))
-  //     // setOwner(await contracts.tokenShop.methods.owner().call({from: data?.address}))
-  //   }
-  // }, [isConnected])
+
+  console.log('connected: ', isConnected)
 
   const handlePopClose = () => {
     setPop(false)
@@ -104,7 +142,7 @@ console.log(isConnected)
       setPop(true)
   }
 
-  let shopStockGroomed = groomWei(stock)
+  let shopStockGroomed = (shopCount.data) ? groomWei(shopCount.data) : '0'
 
   return (
     <main className="container">
@@ -117,9 +155,9 @@ console.log(isConnected)
                 isConnected ?
                   <React.Fragment>
                     <br/>
-                    <strong>Name: </strong> {name}
+                    <strong>Name: </strong> {shopName?.data}
                     <br/>
-                    <strong>Symbol: </strong> {symbol}
+                    <strong>Symbol: </strong> {shopSymbol?.data}
                     <br/>
                     <strong>Stock: </strong> {shopStockGroomed}
                   </React.Fragment>
@@ -130,19 +168,18 @@ console.log(isConnected)
           </Paper>
         </Grid>
 
-          <Popover
-            open={popOpen}
-            onClose={handlePopClose}
-            anchorReference='anchorPosition'
-            anchorPosition={{top: 100, left: 100}}
-            anchorOrigin={{vertical: 'top', horizontal: 'center'}}
-            transformOrigin={{vertical: 'top', horizontal: 'center'}}
-          >
-            <Typography style={styles}>
-              Please connect a MetaMask wallet!
-            </Typography>
-          </Popover>
-
+        <Popover
+          open={popOpen}
+          onClose={handlePopClose}
+          anchorReference='anchorPosition'
+          anchorPosition={{top: 100, left: 100}}
+          anchorOrigin={{vertical: 'top', horizontal: 'center'}}
+          transformOrigin={{vertical: 'top', horizontal: 'center'}}
+        >
+          <Typography style={styles}>
+            Please connect a MetaMask wallet!
+          </Typography>
+        </Popover>
 
         <Grid item xs={12}>
           <Button type="Button" variant="contained" onClick={handleApproveButton}> Approve </Button>
@@ -153,11 +190,55 @@ console.log(isConnected)
         </Grid>
 
         <Grid item xs={12}>
+          <Button type="Button" variant="contained" onClick={handleTradeButton}> Trade </Button>
+        </Grid>
+
+        <Grid item xs={12}>
+          {showTrade ?
+            <ShopItem
+              account={account}
+              shopAddress={SHOP_ADDRESS}
+            /> :
+            null
+          }
+        </Grid>
+
+        <Grid item xs={12}>
+          <Button type="Button" variant="contained" onClick={handleTransferButton}> Transfer </Button>
+        </Grid>
+
+        <Grid item xs={12}>
+          {showTransfer ?
+            <TransferToken
+              name={shopName}
+              symbol={shopSymbol}
+              tokenBalance={tokenBalance}
+            /> :
+            null
+          }
+        </Grid>
+
+        <Grid item xs={12}>
+          <Button type="Button" variant="contained" onClick={handleBurnButton}> Burn </Button>
+        </Grid>
+
+        <Grid item xs={12}>
+          {showBurn ? <BurnToken tokenBalance={tokenBalance} /> : null}
+        </Grid>
+
+        <Grid item xs={12}>
           <Button type="Button" variant="contained" onClick={handleAccountButton}> Account </Button>
         </Grid>
 
         <Grid item xs={12}>
-          {showAccount ? <Account /> : null}
+          {showAccount ?
+            <Account
+              account={account}
+              ethBalance={ethBalance}
+              tokenBalance={tokenBalance}
+            /> :
+            null
+          }
         </Grid>
 
       </Grid>

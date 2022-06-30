@@ -5,7 +5,7 @@ import { useAccount, useBalance } from 'wagmi'
 //components
 import Paper from '@mui/material/Paper'
 
-import {groomWei} from '../../utils/groomBalance'
+import { groomWei } from '../../utils/groomBalance'
 
 //inline styles
 const styles = {
@@ -15,20 +15,7 @@ const styles = {
 
 const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
 
-const Account = ()  => {
-
-  const { data: account } = useAccount()
-
-  const { data: ethBalance } = useBalance({
-    addressOrName: account.address,
-    watch: true,
-  })
-
-  const { data: tokenBalance } = useBalance({
-    addressOrName: account.address,
-    token: TOBY_ADDRESS,
-    watch: true,
-  })
+const Account = ({ account, ethBalance, tokenBalance })  => {
 
   return (
     <div>
@@ -36,11 +23,11 @@ const Account = ()  => {
       <h2>Active Account</h2>
       <p>
         <strong>Ether Balance: </strong>
-        {ethBalance?.formatted} <strong>{ethBalance.symbol}</strong>
+        {ethBalance.formatted} <em>{ethBalance.symbol}</em>
       </p>
       <p>
         <strong>Token Balance: </strong>
-        {tokenBalance?.formatted} <strong>TOBY</strong> 
+        {tokenBalance.formatted} <em>TOBY</em>
       </p>
       <br/>
     </Paper>

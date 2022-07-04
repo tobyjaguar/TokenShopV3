@@ -19,7 +19,7 @@ import Approve from '../../components/Approve'
 import ShopItem from '../../components/ShopItem'
 import BurnToken from '../../components/BurnToken'
 import TransferToken from '../../components/TransferToken'
-// import Admin from '../../components/Admin'
+import Admin from '../../components/Admin'
 
 import contractsContext from '../../context/Contracts/ContractsContext'
 
@@ -28,6 +28,7 @@ import { groomWei } from '../../utils/groomBalance'
 const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
 const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
 const shopABI = require('../../contracts/abi/TokenShop.json')
+const tobyABI = require('../../contracts/abi/ERC20TobyToken.json')
 
 //inline styles
 const styles = {
@@ -65,6 +66,21 @@ const Shop = () => {
   })
 
   const { isConnected } = useConnect()
+
+  // get token owner
+  const shopOwner = useContractRead(
+    {
+      addressOrName: SHOP_ADDRESS,
+      contractInterface: shopABI
+    },
+    'getOwner',
+    {
+      onSuccess(data) {
+        console.log('owner: ', data)
+        setOwner(data)
+      },
+    },
+  )
 
   const shopName = useContractRead(
     {
@@ -238,6 +254,26 @@ const Shop = () => {
               account={account}
               ethBalance={ethBalance}
               tokenBalance={tokenBalance}
+            /> :
+            null
+          }
+        </Grid>
+
+        <Grid item xs={12}>
+        {isConnected ?
+            (owner === account?.address) ?
+              <Button type="Button" variant="contained" onClick={handleAdminButton}> Admin </Button>
+            : null
+          : null
+        }
+        </Grid>
+
+        <Grid item xs={12}>
+          {showAdmin ?
+            <Admin
+              account={account}
+              tokenAddress={TOBY_ADDRESS}
+              shopAddress={SHOP_ADDRESS}
             /> :
             null
           }

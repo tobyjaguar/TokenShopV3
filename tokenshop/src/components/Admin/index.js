@@ -1,4 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import {
+  useContractWrite,
+  useWaitForTransaction } from 'wagmi'
+import {toast } from 'react-toastify'
 
 //components
 import Paper from '@mui/material/Paper'
@@ -8,10 +12,15 @@ import TextField from '@mui/material/TextField'
 import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'
 
-import walletContext from '../../context/WalletProvider/WalletProviderContext'
-import contractsContext from '../../context/Contracts/ContractsContext'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+// import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDownIcon'
+import ArrowDropDown from '@mui/icons-material/ArrowDropDown'
 
-import {groomWei} from '../../utils/groomBalance'
+import { groomWei } from '../../utils/groomBalance'
+import { shorten } from '../../utils/shortAddress'
+
+const shopABI = require('../../contracts/abi/TokenShop.json')
 
 //inline styles
 const styles = {
@@ -19,34 +28,55 @@ const styles = {
   padding: 20
 }
 
-const Admin = () => {
+const menuStyle = {
+  menuPaper : {
+    backgroundColor: '#F9DBDB'
+  }
+}
+
+const Admin = ({ account, tokenAddress, shopAddress }) => {
+  const [anchorEl, setAnchorEl] = useState(null)
+  const open = Boolean(anchorEl)
   const [withdrawAmount, setWithdrawAmount] = useState(0)
   const [depositAmount, setDepositAmount] = useState(0)
   const [mintAmount, setMintAmount] = useState(0)
   const [burnAmount, setBurnAmount] = useState(0)
   const [approveAmount, setApproveAmount] = useState(0)
-  const [shopAddress, setShopAddress] = useState('')
-  const [tokenAddress, setTokenAddress] = useState('')
   const [tokenPair, setTokenPair] = useState('')
   const [tokenSymbol, setTokenSymbol] = useState('')
   const [newTokenAddress, setNewTokenAddress] = useState('')
 
-  const {
-    connected,
-    providerContext,
-    account,
-    tokenBalance
-  } = useContext(walletContext);
+  const withdraw = useContractWrite(
+    {
+      addressOrName: shopAddress,
+      contractInterface: shopABI,
+    },
+    'withdraw',
+    {
+      args:[tokenPair, withdrawAmount],
+    },
+  )
 
-  const {
-    contracts
-  } = useContext(contractsContext);
+  const waitForWithdraw = useWaitForTransaction({
+    hash: withdraw.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
 
-  useEffect(async () => {
-    // initial load
-    setTokenAddress(contracts.tokenShop._address)
-    setShopAddress(contracts.tobyToken._address)
-  }, [connected])
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleMenuOption = (choice) => {
+    setTokenPair(choice)
+  }
 
   const handleInputChange = (event) => {
     switch (event.target.name) {
@@ -106,133 +136,167 @@ const Admin = () => {
     //let tx = await contracts.tobyToken.approve(tokenSymbol, newTokenAddress).send({from: account})
   }
 
-    return (
-      <div>
-        <Paper style={styles}>
-          <h2>Admin</h2>
-          <p>Shop Address: <strong>{shopAddress}</strong> </p>
-          <p>Token Address: <strong>{tokenAddress}</strong> </p>
+  const notifyError = (msg) => toast.error(msg);
+  const notifySuccess = (msg) => toast.success(
+    `approved! hash: ${shorten(msg.transactionHash)} block: ${msg.blockNumber}`
+  );
 
-          <h3><p>Store Stats</p></h3>
-          <Grid container spacing={5}>
-            <Grid item xs={12}>
-              <strong>Withdraw: </strong>
-              <br/>
-              <TextField
-                name="withdrawAmount"
-                type="number"
-                placeholder="amount"
-                value={withdrawAmount}
-                onChange={handleInputChange}
-                variant='outlined'
-                style={{margin: '5px auto'}}
-              />
-              <br/><br/>
-              <Button type="Button" variant="contained" onClick={handleWithdrawButton}>Withdraw</Button>
-            </Grid>
+  return (
+    <div>
+      <Paper style={styles}>
+        <h2>Admin</h2>
+        <p>Shop Address: <strong>{shopAddress}</strong> </p>
+        <p>Token Address: <strong>{tokenAddress}</strong> </p>
 
-            <Grid item xs={12}>
-              <strong>Deposit: </strong>
-              <br/>
-              <TextField
-                name="depositAmount"
-                type="number"
-                placeholder="amount"
-                value={depositAmount}
-                onChange={handleInputChange}
-                variant='outlined'
-                style={{margin: '5px auto'}}
-              />
-              <br/>
-              (Add funds to the shop)
-              <br/><br/>
-              <Button type="Button" variant="contained" onClick={handleDepositButton}>Deposit</Button>
-            </Grid>
-
-            <Grid item xs={12}>
-              <strong>Allocate Tokens to the Shop:</strong>
-              <br/>
-              <TextField
-                name="mintAmount"
-                type="number"
-                placeholder="amount"
-                value={mintAmount}
-                onChange={handleInputChange}
-                variant='outlined'
-                style={{margin: '5px auto'}}
-              />
-              <br/>
-              (Mint Tokens to the store)
-              <br/><br/>
-              <Button type="Button" variant="contained" onClick={handleMintButton}>Mint</Button>
-            </Grid>
-
-            <Grid item xs={12}>
-              <strong>Burn Tokens from your Account</strong>
-              <br/>
-              <TextField
-                name="burnAmount"
-                type="number"
-                placeholder="amount"
-                value={burnAmount}
-                onChange={handleInputChange}
-                variant='outlined'
-                style={{margin: '5px auto'}}
-              />
-              <br/>
-              (Burn your tokens)
-              <br/><br/>
-              <Button type="Button" variant="contained" onClick={handleBurnButton}>Burn</Button>
-            </Grid>
-
-            <Grid item xs={12}>
-              <strong>Approve Owner to Burn Shop Stock</strong>
-              <br/>
-              <TextField
-                name="approveAmount"
-                type="number"
-                placeholder="amount"
-                value={approveAmount}
-                onChange={handleInputChange}
-                variant='outlined'
-                style={{margin: '5px auto'}}
-              />
-              <br/>
-              (Approve Owner)
-              <br/><br/>
-              <Button type="Button" variant="contained" onClick={handleApproveButton}>Approve</Button>
-            </Grid>
-
-            <Grid item xs={12}>
-              <strong>Add new Stable Token to Shop</strong>
-              <br/>
-              <TextField
-                name="tokenSymbol"
-                type="string"
-                placeholder="symbol"
-                value={tokenSymbol}
-                onChange={handleInputChange}
-                variant='outlined'
-                style={{margin: '5px auto'}}
-              />
-              <br/>
-              <TextField
-                name="tokenAddress"
-                type="string"
-                placeholder="address"
-                value={newTokenAddress}
-                onChange={handleInputChange}
-                variant='outlined'
-                style={{margin: '5px auto'}}
-              />
-              <br/>
-              (TOKEN SYMBOL)
-              <br/><br/>
-              <Button type="Button" variant="contained" onClick={handleSetTokenButton}>Add</Button>
-            </Grid>
+        <h3><p>Store Stats</p></h3>
+        <Grid container spacing={5}>
+          <Grid item xs={12}>
+            <strong>Withdraw: </strong>
+            <br/>
+            <Button
+              type="Button"
+              variant="contained"
+              onClick={handleMenu}
+              endIcon={<ArrowDropDown />}
+              >
+                Token Pair
+              </Button>
+            <br/>
+            <TextField
+              name="withdrawAmount"
+              type="number"
+              placeholder="amount"
+              value={withdrawAmount}
+              onChange={handleInputChange}
+              variant='outlined'
+              style={{margin: '5px auto'}}
+            />
+            <br/><br/>
+            <Button type="Button" variant="contained" onClick={handleWithdrawButton}>Withdraw</Button>
           </Grid>
-      </Paper>
-    </div>
+
+          <Grid item xs={12}>
+            <strong>Deposit: </strong>
+            <br/>
+            <TextField
+              name="depositAmount"
+              type="number"
+              placeholder="amount"
+              value={depositAmount}
+              onChange={handleInputChange}
+              variant='outlined'
+              style={{margin: '5px auto'}}
+            />
+            <br/>
+            (Add funds to the shop)
+            <br/><br/>
+            <Button type="Button" variant="contained" onClick={handleDepositButton}>Deposit</Button>
+          </Grid>
+
+          <Grid item xs={12}>
+            <strong>Allocate Tokens to the Shop:</strong>
+            <br/>
+            <TextField
+              name="mintAmount"
+              type="number"
+              placeholder="amount"
+              value={mintAmount}
+              onChange={handleInputChange}
+              variant='outlined'
+              style={{margin: '5px auto'}}
+            />
+            <br/>
+            (Mint Tokens to the store)
+            <br/><br/>
+            <Button type="Button" variant="contained" onClick={handleMintButton}>Mint</Button>
+          </Grid>
+
+          <Grid item xs={12}>
+            <strong>Burn Tokens from your Account</strong>
+            <br/>
+            <TextField
+              name="burnAmount"
+              type="number"
+              placeholder="amount"
+              value={burnAmount}
+              onChange={handleInputChange}
+              variant='outlined'
+              style={{margin: '5px auto'}}
+            />
+            <br/>
+            (Burn your tokens)
+            <br/><br/>
+            <Button type="Button" variant="contained" onClick={handleBurnButton}>Burn</Button>
+          </Grid>
+
+          <Grid item xs={12}>
+            <strong>Approve Owner to Burn Shop Stock</strong>
+            <br/>
+            <TextField
+              name="approveAmount"
+              type="number"
+              placeholder="amount"
+              value={approveAmount}
+              onChange={handleInputChange}
+              variant='outlined'
+              style={{margin: '5px auto'}}
+            />
+            <br/>
+            (Approve Owner)
+            <br/><br/>
+            <Button type="Button" variant="contained" onClick={handleApproveButton}>Approve</Button>
+          </Grid>
+
+          <Grid item xs={12}>
+            <strong>Add new Stable Token to Shop</strong>
+            <br/>
+            <TextField
+              name="tokenSymbol"
+              type="string"
+              placeholder="symbol"
+              value={tokenSymbol}
+              onChange={handleInputChange}
+              variant='outlined'
+              style={{margin: '5px auto'}}
+            />
+            <br/>
+            <TextField
+              name="tokenAddress"
+              type="string"
+              placeholder="address"
+              value={newTokenAddress}
+              onChange={handleInputChange}
+              variant='outlined'
+              style={{margin: '5px auto'}}
+            />
+            <br/>
+            (TOKEN SYMBOL)
+            <br/><br/>
+            <Button type="Button" variant="contained" onClick={handleSetTokenButton}>Add</Button>
+          </Grid>
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleClose}
+            onClick={handleClose}
+            sx={{ '& .MuiMenu-paper': { backgroundColor: '#F9DBDB' } }}
+          >
+            <MenuItem
+              onClick={() => handleMenuOption('TRFL')}>Tuffle (TRFL)
+            </MenuItem>
+            <MenuItem
+              onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)
+            </MenuItem>
+            <MenuItem
+              onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)
+            </MenuItem>
+            <MenuItem
+              onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)
+            </MenuItem>
+          </Menu>
+        </Grid>
+    </Paper>
+  </div>
   )
 }
 

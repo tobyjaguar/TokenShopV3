@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
   useContractWrite,
   useWaitForTransaction
@@ -9,17 +9,12 @@ import { toast } from 'react-toastify'
 import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import Dialog from '@mui/material/Dialog'
-import TextField from '@mui/material/TextField'
-import Popper from '@mui/material/Popper'
-import MenuList from '@mui/material/MenuList'
+import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
+import ArrowDropDown from '@mui/icons-material/ArrowDropDown'
 
-import myTx from '../../assets/tx.json'
-
-import { groomWei } from '../../utils/groomBalance'
 import { shorten } from '../../utils/shortAddress'
 
-const TRFL_NAME = process.env.REACT_APP_TRFL_TOKEN_NAME
 const TRFL_ADDRESS = process.env.REACT_APP_TRFL_TOKEN_CONTRACT_ADDRESS
 const USDC_ADDRESS = process.env.REACT_APP_USDC_TOKEN_CONTRACT_ADDRESS
 const USDT_ADDRESS = process.env.REACT_APP_USDT_TOKEN_CONTRACT_ADDRESS
@@ -44,8 +39,9 @@ const dialogStyles = {
 }
 
 const Approve = () => {
+  const [anchorEl, setAnchorEl] = useState(null)
+  const open = Boolean(anchorEl)
   const [dialogOpen, setDialog] = useState(false)
-  const [menuState, setMenuState] = useState(false)
   const [alertText, setText] = useState('')
   const [selectedToken, setSelectedToken] = useState('')
 
@@ -141,13 +137,16 @@ const Approve = () => {
     setDialog(false)
   }
 
-  const openMenu = () => {
-    setMenuState(true)
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget)
   }
 
-  const handleMenu = (choice) => {
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleMenuOption = (choice) => {
     setSelectedToken(choice)
-    setMenuState(false)
   }
 
   const handleApproveButton = async () => {
@@ -185,17 +184,33 @@ const Approve = () => {
     <div>
       <Paper style={styles} elevation={5}>
         <h3><p>Approve a Trade: </p></h3>
-        <MenuList>
-          <MenuItem onClick={() => handleMenu('TRFL')}>Tuffle (TRFL)</MenuItem>
-          <MenuItem onClick={() => handleMenu('USDC')}>US Dollar Coin (USDC)</MenuItem>
-          <MenuItem onClick={() => handleMenu('USDT')}>US Dollar Tether (USDT)</MenuItem>
-          <MenuItem onClick={() => handleMenu('DAI')}>Dai Stable Coin (DAI)</MenuItem>
-        </MenuList>
-
+        <Button
+          type="Button"
+          variant="contained"
+          onClick={handleMenu}
+          endIcon={<ArrowDropDown />}
+        >
+          Token
+        </Button>
+        <br/><br/>
         <Button type="Button" variant="contained" onClick={handleApproveButton}>Approve</Button>
         <br/>
         <p>Approving: {selectedToken}</p>
       </Paper>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        onClick={handleClose}
+        sx={{ '& .MuiMenu-paper': { backgroundColor: '#F9DBDB' } }}
+      >
+        <MenuItem onClick={() => handleMenuOption('TRFL')}>Tuffle (TRFL)</MenuItem>
+        <MenuItem onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)</MenuItem>
+        <MenuItem onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)</MenuItem>
+        <MenuItem onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>
+      </Menu>
+
       <Dialog PaperProps={dialogStyles} open={dialogOpen} >
         <p>{alertText}</p>
         <p><Button variant="contained" onClick={handleDialogClose} >Close</Button></p>

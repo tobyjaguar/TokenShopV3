@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { utils } from 'ethers'
 import {
   useContractWrite,
   useWaitForTransaction } from 'wagmi'
@@ -14,13 +15,13 @@ import Typography from '@mui/material/Typography'
 
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
-// import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDownIcon'
 import ArrowDropDown from '@mui/icons-material/ArrowDropDown'
 
 import { groomWei } from '../../utils/groomBalance'
 import { shorten } from '../../utils/shortAddress'
 
 const shopABI = require('../../contracts/abi/TokenShop.json')
+const tokenABI = require('../../contracts/abi/TruffleToken.json')
 
 //inline styles
 const styles = {
@@ -37,11 +38,8 @@ const menuStyle = {
 const Admin = ({ account, tokenAddress, shopAddress }) => {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
-  const [withdrawAmount, setWithdrawAmount] = useState(0)
-  const [depositAmount, setDepositAmount] = useState(0)
-  const [mintAmount, setMintAmount] = useState(0)
-  const [burnAmount, setBurnAmount] = useState(0)
-  const [approveAmount, setApproveAmount] = useState(0)
+  const [withdrawAmount, setWithdrawAmount] = useState('0')
+  const [mintAmount, setMintAmount] = useState('0')
   const [tokenPair, setTokenPair] = useState('')
   const [tokenSymbol, setTokenSymbol] = useState('')
   const [newTokenAddress, setNewTokenAddress] = useState('')
@@ -53,12 +51,32 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
     },
     'withdraw',
     {
-      args:[tokenPair, withdrawAmount],
+      args:[tokenPair, utils.parseUnits(withdrawAmount)],
     },
   )
 
   const waitForWithdraw = useWaitForTransaction({
     hash: withdraw.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
+
+  const mint = useContractWrite(
+    {
+      addressOrName: tokenAddress,
+      contractInterface: tokenABI,
+    },
+    'mint',
+    {
+      args:[shopAddress, utils.parseUnits(mintAmount)],
+    },
+  )
+
+  const waitForMint = useWaitForTransaction({
+    hash: mint.data?.hash,
     onSettled(data, error) {
       (error) ?
         notifyError(error) :
@@ -83,17 +101,8 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
       case 'withdrawAmount':
         setWithdrawAmount(event.target.value)
         break;
-      case 'depositAmount':
-        setDepositAmount(event.target.value)
-        break;
       case 'mintAmount':
         setMintAmount(event.target.value)
-        break;
-      case 'burnAmount':
-        setBurnAmount(event.target.value)
-        break;
-      case 'approveAmount':
-        setApproveAmount(event.target.value)
         break;
       case 'tokenSymbol':
         setTokenSymbol(event.target.value)
@@ -106,29 +115,14 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
   }
 
   const handleWithdrawButton = async () => {
-    console.log(withdrawAmount)
+    console.log(utils.parseUnits(withdrawAmount).toString())
     //let tx = await contracts.tokenShop.withdraw(tokenPair, withdrawAmount).send({from: account})
-
-  }
-
-  const handleDepositButton = () => {
-    console.log(depositAmount)
-    //let tx = await contracts.tokenShop.deposit(depositAmount).send({from: account})
+    await withdraw.writeAsync()
   }
 
   const handleMintButton = () => {
     console.log(mintAmount)
     //let tx = await contracts.tobyToken.mint(shopAddress, mintAmount).send({from: account})
-  }
-
-  const handleBurnButton = () => {
-    console.log(burnAmount)
-    //let tx = await contracts.tobyToken.burn(burnAmount).send({from: account})
-  }
-
-  const handleApproveButton = () => {
-    console.log(approveAmount)
-    //let tx = await contracts.tobyToken.approve(approveAmount).send({from: account})
   }
 
   const handleSetTokenButton = () => {
@@ -171,26 +165,9 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
               variant='outlined'
               style={{margin: '5px auto'}}
             />
-            <br/><br/>
+            <br/>
+            <p>Pair: {tokenPair}</p>
             <Button type="Button" variant="contained" onClick={handleWithdrawButton}>Withdraw</Button>
-          </Grid>
-
-          <Grid item xs={12}>
-            <strong>Deposit: </strong>
-            <br/>
-            <TextField
-              name="depositAmount"
-              type="number"
-              placeholder="amount"
-              value={depositAmount}
-              onChange={handleInputChange}
-              variant='outlined'
-              style={{margin: '5px auto'}}
-            />
-            <br/>
-            (Add funds to the shop)
-            <br/><br/>
-            <Button type="Button" variant="contained" onClick={handleDepositButton}>Deposit</Button>
           </Grid>
 
           <Grid item xs={12}>
@@ -209,42 +186,6 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
             (Mint Tokens to the store)
             <br/><br/>
             <Button type="Button" variant="contained" onClick={handleMintButton}>Mint</Button>
-          </Grid>
-
-          <Grid item xs={12}>
-            <strong>Burn Tokens from your Account</strong>
-            <br/>
-            <TextField
-              name="burnAmount"
-              type="number"
-              placeholder="amount"
-              value={burnAmount}
-              onChange={handleInputChange}
-              variant='outlined'
-              style={{margin: '5px auto'}}
-            />
-            <br/>
-            (Burn your tokens)
-            <br/><br/>
-            <Button type="Button" variant="contained" onClick={handleBurnButton}>Burn</Button>
-          </Grid>
-
-          <Grid item xs={12}>
-            <strong>Approve Owner to Burn Shop Stock</strong>
-            <br/>
-            <TextField
-              name="approveAmount"
-              type="number"
-              placeholder="amount"
-              value={approveAmount}
-              onChange={handleInputChange}
-              variant='outlined'
-              style={{margin: '5px auto'}}
-            />
-            <br/>
-            (Approve Owner)
-            <br/><br/>
-            <Button type="Button" variant="contained" onClick={handleApproveButton}>Approve</Button>
           </Grid>
 
           <Grid item xs={12}>

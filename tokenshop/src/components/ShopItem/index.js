@@ -12,19 +12,16 @@ import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import Dialog from '@mui/material/Dialog'
 import TextField from '@mui/material/TextField'
-import MenuList from '@mui/material/MenuList'
+import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
+import ArrowDropDown from '@mui/icons-material/ArrowDropDown'
 
 import ContractDetails from '../ContractDetails'
 
-import { groomWei } from '../../utils/groomBalance'
 import { shorten } from '../../utils/shortAddress'
 import { convertAmount, withDecimal } from '../../utils/purchaseAmount'
 
-const TOKEN_NAME = process.env.REACT_APP_TRFL_TOKEN_NAME
-const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
 const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
-const tokenABI = require('../../contracts/abi/ERC20TobyToken.json')
 const shopABI = require('../../contracts/abi/TokenShop.json')
 
 //inline styles
@@ -42,12 +39,12 @@ const dialogStyles = {
 }
 
 const ShopItem = ({ account, shopAddress, name, symbol }) => {
+  const [anchorEl, setAnchorEl] = useState(null)
+  const open = Boolean(anchorEl)
   const [dialogOpen, setDialog] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
-  const [decimals, setDecimals] = useState('18')
   const [weiAmount, setWeiAmount] = useState('0')
   const [buyAmount, setBuyAmount] = useState('0')
-  const [menuState, setMenuState] = useState(false)
   const [selectedToken, setSelectedToken] = useState('')
   const [allowance, setAllowance] = useState('0')
   const [alertText, setText] = useState('')
@@ -90,7 +87,7 @@ const ShopItem = ({ account, shopAddress, name, symbol }) => {
       setAllowance(allowanceBN.toString())
     }
     if (selectedToken !== '') getAllowance()
-  }, [selectedToken])
+  }, [account.address, contract, selectedToken])
 
   const handleDialogOpen = () => {
     setDialog(true)
@@ -100,13 +97,16 @@ const ShopItem = ({ account, shopAddress, name, symbol }) => {
     setDialog(false)
   }
 
-  const openMenu = () => {
-    setMenuState(true)
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget)
   }
 
-  const handleMenu = (choice) => {
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleMenuOption = (choice) => {
     setSelectedToken(choice)
-    setMenuState(false)
   }
 
   const handleInputChange = (event) => {
@@ -156,30 +156,44 @@ const ShopItem = ({ account, shopAddress, name, symbol }) => {
 
   return (
     <div>
-      <Paper style={styles} elevation={5}>
-        <h3><p>Buy Tokens: </p></h3>
-        <p>Number of Tokens:</p>
-        <form className="pure-form">
-          <TextField
-            name="purchaseAmount"
-            type="number"
-            placeholder="tokens"
-            value={buyAmount}
-            onChange={handleInputChange}
-            variant='outlined'
-            style={{margin: '5% auto'}}
-          />
-          <p>Payment:</p>
-          <MenuList>
-            <MenuItem onClick={() => handleMenu('TRFL')}>Tuffle (TRFL)</MenuItem>
-            <MenuItem onClick={() => handleMenu('USDC')}>US Dollar Coin (USDC)</MenuItem>
-            <MenuItem onClick={() => handleMenu('USDT')}>US Dollar Tether (USDT)</MenuItem>
-            <MenuItem onClick={() => handleMenu('DAI')}>Dai Stable Coin (DAI)</MenuItem>
-          </MenuList>
+    <Paper style={styles} elevation={5}>
+      <h3><p>Buy Tokens: </p></h3>
+      <p>Number of Tokens:</p>
+      <form className="pure-form">
+        <TextField
+          name="purchaseAmount"
+          type="number"
+          placeholder="tokens"
+          value={buyAmount}
+          onChange={handleInputChange}
+          variant='outlined'
+          style={{margin: '5% auto'}}
+        />
+        <p>Payment:</p>
+        <Button
+          type="Button"
+          variant="contained"
+          onClick={handleMenu}
+          endIcon={<ArrowDropDown />}
+        >
+          Token
+        </Button>
+        <br/><br/>
+        <Button type="Button" variant="contained" onClick={handleBuyButton}>Buy</Button>
+      </form>
 
-          <br/>
-          <Button type="Button" variant="contained" onClick={handleBuyButton}>Buy</Button>
-        </form>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        onClick={handleClose}
+        sx={{ '& .MuiMenu-paper': { backgroundColor: '#F9DBDB' } }}
+      >
+        <MenuItem onClick={() => handleMenuOption('TRFL')}>Tuffle (TRFL)</MenuItem>
+        <MenuItem onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)</MenuItem>
+        <MenuItem onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)</MenuItem>
+        <MenuItem onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>
+      </Menu>
 
       <p>Total: {buyAmount} {selectedToken} </p>
       <p>Able to spend: {utils.formatEther(allowance)} {selectedToken} </p>

@@ -18,7 +18,6 @@ import MyAppBar from './views/AppBar'
 import Home from './views/Home'
 import Shop from './views/Shop'
 
-import { publicProvider } from 'wagmi/providers/public'
 import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 
 // polyfills

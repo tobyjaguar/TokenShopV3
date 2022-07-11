@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { utils } from 'ethers'
 import {
   useContractWrite,
@@ -10,14 +10,11 @@ import Paper from '@mui/material/Paper'
 import Grid from '@mui/material/Grid'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
-import Divider from '@mui/material/Divider'
-import Typography from '@mui/material/Typography'
 
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import ArrowDropDown from '@mui/icons-material/ArrowDropDown'
 
-import { groomWei } from '../../utils/groomBalance'
 import { shorten } from '../../utils/shortAddress'
 
 const shopABI = require('../../contracts/abi/TokenShop.json')
@@ -29,16 +26,11 @@ const styles = {
   padding: 20
 }
 
-const menuStyle = {
-  menuPaper : {
-    backgroundColor: '#F9DBDB'
-  }
-}
-
 const Admin = ({ account, tokenAddress, shopAddress }) => {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
   const [withdrawAmount, setWithdrawAmount] = useState('0')
+  const [depositAmount, setDepositAmount] = useState('0')
   const [mintAmount, setMintAmount] = useState('0')
   const [tokenPair, setTokenPair] = useState('')
   const [tokenSymbol, setTokenSymbol] = useState('')
@@ -57,6 +49,26 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
 
   const waitForWithdraw = useWaitForTransaction({
     hash: withdraw.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
+
+  const deposit = useContractWrite(
+    {
+      addressOrName: shopAddress,
+      contractInterface: shopABI,
+    },
+    'deposit',
+    {
+      args:[utils.parseUnits(depositAmount)],
+    },
+  )
+
+  const waitForDeposit = useWaitForTransaction({
+    hash: deposit.data?.hash,
     onSettled(data, error) {
       (error) ?
         notifyError(error) :
@@ -84,6 +96,26 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
     },
   })
 
+  const setToken = useContractWrite(
+    {
+      addressOrName: tokenAddress,
+      contractInterface: tokenABI,
+    },
+    'setStableToken',
+    {
+      args:[tokenSymbol, newTokenAddress],
+    },
+  )
+
+  const waitForSetToken = useWaitForTransaction({
+    hash: setToken.data?.hash,
+    onSettled(data, error) {
+      (error) ?
+        notifyError(error) :
+        notifySuccess(data)
+    },
+  })
+
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget)
   }
@@ -101,6 +133,9 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
       case 'withdrawAmount':
         setWithdrawAmount(event.target.value)
         break;
+      case 'depositAmount':
+        setDepositAmount(event.target.value)
+        break;
       case 'mintAmount':
         setMintAmount(event.target.value)
         break;
@@ -115,19 +150,24 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
   }
 
   const handleWithdrawButton = async () => {
-    console.log(utils.parseUnits(withdrawAmount).toString())
     //let tx = await contracts.tokenShop.withdraw(tokenPair, withdrawAmount).send({from: account})
     await withdraw.writeAsync()
+    // console.log(utils.parseUnits(withdrawAmount).toString())
   }
 
-  const handleMintButton = () => {
-    console.log(mintAmount)
-    //let tx = await contracts.tobyToken.mint(shopAddress, mintAmount).send({from: account})
+  const handleDepositButton = async () => {
+    await deposit.writeAsync()
+    // console.log(utils.parseUnits(depositAmount).toString())
   }
 
-  const handleSetTokenButton = () => {
-    console.log(tokenSymbol)
-    //let tx = await contracts.tobyToken.approve(tokenSymbol, newTokenAddress).send({from: account})
+  const handleMintButton = async () => {
+    await mint.writeAsync()
+    // console.log(utils.parseUnits(mintAmount).toString())
+  }
+
+  const handleSetTokenButton = async () => {
+    await setToken.writeAsync()
+    // console.log(tokenSymbol, newTokenAddress)
   }
 
   const notifyError = (msg) => toast.error(msg);
@@ -168,6 +208,24 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
             <br/>
             <p>Pair: {tokenPair}</p>
             <Button type="Button" variant="contained" onClick={handleWithdrawButton}>Withdraw</Button>
+          </Grid>
+
+          <Grid item xs={12}>
+            <strong>Deposit Tokens to the Shop:</strong>
+            <br/>
+            <TextField
+              name="depositAmount"
+              type="number"
+              placeholder="amount"
+              value={depositAmount}
+              onChange={handleInputChange}
+              variant='outlined'
+              style={{margin: '5px auto'}}
+            />
+            <br/>
+            (transfer Tokens to the store)
+            <br/><br/>
+            <Button type="Button" variant="contained" onClick={handleDepositButton}>Deposit</Button>
           </Grid>
 
           <Grid item xs={12}>

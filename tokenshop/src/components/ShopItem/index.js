@@ -21,7 +21,6 @@ import ContractDetails from '../ContractDetails'
 import { shorten } from '../../utils/shortAddress'
 import { convertAmount, withDecimal } from '../../utils/purchaseAmount'
 
-const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
 const shopABI = require('../../contracts/abi/TokenShop.json')
 
 //inline styles
@@ -38,7 +37,7 @@ const dialogStyles = {
   }
 }
 
-const ShopItem = ({ account, shopAddress, name, symbol }) => {
+const ShopItem = ({ account, name, network, shopAddress, symbol }) => {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
   const [dialogOpen, setDialog] = useState(false)
@@ -52,7 +51,7 @@ const ShopItem = ({ account, shopAddress, name, symbol }) => {
   // need to get allowance for the selected collateral
   const provider = useProvider()
   const contract = useContract({
-      addressOrName: SHOP_ADDRESS,
+      addressOrName: shopAddress,
       contractInterface: shopABI,
       signerOrProvider: provider
   })
@@ -60,7 +59,7 @@ const ShopItem = ({ account, shopAddress, name, symbol }) => {
   // buy with selected token
   const purchaseTx = useContractWrite(
     {
-      addressOrName: SHOP_ADDRESS,
+      addressOrName: shopAddress,
       contractInterface: shopABI,
     },
     'buyToken',
@@ -154,6 +153,12 @@ const ShopItem = ({ account, shopAddress, name, symbol }) => {
     `purchased! hash: ${shorten(msg.transactionHash)} block: ${msg.blockNumber}`
   );
 
+  const mainnetTokens = [
+    <MenuItem key={1} onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)</MenuItem>,
+    <MenuItem key={2} onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)</MenuItem>,
+    <MenuItem key={3} onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>
+  ]
+
   return (
     <div>
     <Paper style={styles} elevation={5}>
@@ -189,10 +194,10 @@ const ShopItem = ({ account, shopAddress, name, symbol }) => {
         onClick={handleClose}
         sx={{ '& .MuiMenu-paper': { backgroundColor: '#F9DBDB' } }}
       >
-        <MenuItem onClick={() => handleMenuOption('TRFL')}>Tuffle (TRFL)</MenuItem>
-        <MenuItem onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)</MenuItem>
-        <MenuItem onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)</MenuItem>
-        <MenuItem onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>
+        {(network === 'arbitrum') ?
+          mainnetTokens.map(item => item) :
+          <MenuItem onClick={() => handleMenuOption('TRFL')}>Truffle Testnet (TRFL)</MenuItem>
+        }
       </Menu>
 
       <p>Total: {buyAmount} {selectedToken} </p>

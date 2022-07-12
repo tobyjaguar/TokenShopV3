@@ -10,9 +10,6 @@ import {
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { ToastContainer } from 'react-toastify';
 
-// context
-import ContractsState from './context/Contracts/ContractsState'
-
 // components
 import MyAppBar from './views/AppBar'
 import Home from './views/Home'
@@ -61,7 +58,6 @@ const App = () => {
       <WagmiConfig client={client}>
         <RainbowKitProvider chains={chains}>
         <ToastContainer position='bottom-right' />
-        <ContractsState>
           <MyAppBar />
           <Router>
             <Routes>
@@ -69,7 +65,6 @@ const App = () => {
               <Route path="shop" element={<Shop />} />
             </Routes>
           </Router>
-        </ContractsState>
         </RainbowKitProvider>
       </WagmiConfig>
     </div>

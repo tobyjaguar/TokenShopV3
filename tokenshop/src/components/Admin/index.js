@@ -3,7 +3,7 @@ import { utils } from 'ethers'
 import {
   useContractWrite,
   useWaitForTransaction } from 'wagmi'
-import {toast } from 'react-toastify'
+import { toast } from 'react-toastify'
 
 //components
 import Paper from '@mui/material/Paper'
@@ -26,7 +26,7 @@ const styles = {
   padding: 20
 }
 
-const Admin = ({ account, tokenAddress, shopAddress }) => {
+const Admin = ({ account, network, tokenAddress, shopAddress }) => {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
   const [withdrawAmount, setWithdrawAmount] = useState('0')
@@ -98,8 +98,8 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
 
   const setToken = useContractWrite(
     {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
+      addressOrName: shopAddress,
+      contractInterface: shopABI,
     },
     'setStableToken',
     {
@@ -179,8 +179,9 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
     <div>
       <Paper style={styles}>
         <h2>Admin</h2>
-        <p>Shop Address: <strong>{shopAddress}</strong> </p>
-        <p>Token Address: <strong>{tokenAddress}</strong> </p>
+        <p>Network: <strong>{network}</strong></p>
+        <p>Shop Address: <strong>{shopAddress}</strong></p>
+        <p>Token Address: <strong>{tokenAddress}</strong></p>
 
         <h3><p>Store Stats</p></h3>
         <Grid container spacing={5}>
@@ -280,9 +281,6 @@ const Admin = ({ account, tokenAddress, shopAddress }) => {
             onClick={handleClose}
             sx={{ '& .MuiMenu-paper': { backgroundColor: '#F9DBDB' } }}
           >
-            <MenuItem
-              onClick={() => handleMenuOption('TRFL')}>Tuffle (TRFL)
-            </MenuItem>
             <MenuItem
               onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)
             </MenuItem>

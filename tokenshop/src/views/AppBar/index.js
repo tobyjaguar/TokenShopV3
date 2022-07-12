@@ -1,14 +1,12 @@
-import React, { useContext, useEffect, useState  } from 'react'
+import { useState, useEffect } from 'react'
+import { useNetwork } from 'wagmi'
+
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
+
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 
-import hex2dec from 'hex2dec'
-
-import contractsContext from '../../context/Contracts/ContractsContext'
-
-import { groomWei } from '../../utils/groomBalance'
 import { shorten } from '../../utils/shortAddress'
 
 //Styles
@@ -29,25 +27,22 @@ const style02 = {
   flex: 1
 }
 
-const APP_ENV = process.env.REACT_APP_ENV
-const NETWORK_NAME = process.env.REACT_APP_NETWORK_NAME
-const NETWORK_ID = process.env.REACT_APP_NETWORK_ID
-const RPC_URL = process.env.REACT_APP_RPC_URL
-const EXPLORER_URL = process.env.REACT_APP_EXPLORER_URL
-
-const TOKEN_ABI = require('../../contracts/abi/ERC20TobyToken.json')
-const SHOP_ABI = require('../../contracts/abi/TokenShop.json')
-
-const TOKEN_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
-const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
+const SHOP_ADDRESS_ARB_MAINNET = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS_ARB_MAINNET
+const SHOP_ADDRESS_ARB_TESTNET = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS_ARB_TESTNET
 
 const MyAppBar = () => {
   const [shopAddress, setShopAddress] = useState('')
 
+  const { activeChain } = useNetwork()
+
   useEffect(() => {
     // fired on inital load of page
-    setShopAddress(shorten(SHOP_ADDRESS))
-  }, [])
+    if (activeChain) {
+      (activeChain.network === 'arbitrum') ?
+          setShopAddress(shorten(SHOP_ADDRESS_ARB_MAINNET)) :
+          setShopAddress(shorten(SHOP_ADDRESS_ARB_TESTNET))
+    }
+  }, [activeChain, shopAddress])
 
   return (
     <AppBar style={style01} position='static'>
@@ -62,66 +57,6 @@ const MyAppBar = () => {
     </AppBar>
   )
  }
-
-
- // {connected ?
- //     <Typography style={style02} >
- //       Balance: {groomWei(0)} TOBY
- //     </Typography>
- //   : <Typography style={style02} >
- //       <Button
- //         variant='contained'
- //         onClick={async () => connect()}
- //       >
- //         Connect
- //       </Button>
- //     </Typography>
- // }
-
- // {(isConnected) ?
- //   <Typography style={style02} >
- //     <Button
- //       variant='contained'
- //       onClick={disconnect}
- //     >
- //       Disconnect
- //     </Button>
- //   </Typography>
- //   :
- //   <Typography style={style02} >
- //   <Button
- //     variant='contained'
- //     onClick={handleClick}
- //   >
- //     Connect
- //   </Button>
- //   </Typography>
- // }
- //
- // <Menu
- //   id='menu'
- //   anchorEl={anchorEl}
- //   open={open}
- //   onClose={handleClose}
- //   MenuListProps={{
- //     'aria-labelledby': 'fade-button',
- //   }}
- //   TransitionComponent={Fade}
- // >
- // {connectors.map(connector => (
- //   <MenuItem
- //     key={connector.id}
- //     variant='contained'
- //     disabled={!connector.ready}
- //     onClick={() => connect(connector)}
- //   >
- //     {connector.name}
- //     {!connector.ready && ' (unsupported)'}
- //     {isConnecting && connector.id === pendingConnector?.id && ' (connecting)'}
- //   </MenuItem>
- // ))}
- // </Menu>
- // </Toolbar>
  // {error && <Alert severity='error'>Error connecting wallet</Alert>}
 
 export default MyAppBar

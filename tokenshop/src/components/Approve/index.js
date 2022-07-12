@@ -15,12 +15,13 @@ import ArrowDropDown from '@mui/icons-material/ArrowDropDown'
 
 import { shorten } from '../../utils/shortAddress'
 
-const TRFL_ADDRESS = process.env.REACT_APP_TRFL_TOKEN_CONTRACT_ADDRESS
+const APPROVAL_AMOUNT = process.env.REACT_APP_APPROVAL_AMOUNT
 const USDC_ADDRESS = process.env.REACT_APP_USDC_TOKEN_CONTRACT_ADDRESS
 const USDT_ADDRESS = process.env.REACT_APP_USDT_TOKEN_CONTRACT_ADDRESS
 const DAI_ADDRESS = process.env.REACT_APP_DAI_TOKEN_CONTRACT_ADDRESS
-const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
-const APPROVAL_AMOUNT = process.env.REACT_APP_APPROVAL_AMOUNT
+const TRFL_ADDRESS = process.env.REACT_APP_TRFL_TOKEN_CONTRACT_ADDRESS
+const SHOP_ADDRESS_MAINNET = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS_ARB_MAINNET
+const SHOP_ADDRESS_TESTNET = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS_ARB_TESTNET
 
 const tokenABI = require('../../contracts/abi/TruffleToken.json')
 
@@ -38,14 +39,14 @@ const dialogStyles = {
   }
 }
 
-const Approve = () => {
+const Approve = ({ network, shopAddress }) => {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
   const [dialogOpen, setDialog] = useState(false)
-  const [alertText, setText] = useState('')
   const [selectedToken, setSelectedToken] = useState('')
+  const [alertText, setText] = useState('')
 
-  // Truffle
+  // TRFL (for testnet)
   const trflApprove = useContractWrite(
     {
       addressOrName: TRFL_ADDRESS,
@@ -53,7 +54,7 @@ const Approve = () => {
     },
     'approve',
     {
-      args:[SHOP_ADDRESS, APPROVAL_AMOUNT],
+      args:[shopAddress, APPROVAL_AMOUNT],
     },
   )
 
@@ -74,7 +75,7 @@ const Approve = () => {
     },
     'approve',
     {
-      args:[SHOP_ADDRESS, APPROVAL_AMOUNT],
+      args:[shopAddress, APPROVAL_AMOUNT],
     },
   )
 
@@ -95,7 +96,7 @@ const Approve = () => {
     },
     'approve',
     {
-      args:[SHOP_ADDRESS, APPROVAL_AMOUNT],
+      args:[shopAddress, APPROVAL_AMOUNT],
     },
   )
 
@@ -116,7 +117,7 @@ const Approve = () => {
     },
     'approve',
     {
-      args:[SHOP_ADDRESS, APPROVAL_AMOUNT],
+      args:[shopAddress, APPROVAL_AMOUNT],
     },
   )
 
@@ -180,6 +181,12 @@ const Approve = () => {
     `approved! hash: ${shorten(msg.transactionHash)} block: ${msg.blockNumber}`
   );
 
+  const mainnetTokens = [
+    <MenuItem key={1} onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)</MenuItem>,
+    <MenuItem key={2} onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)</MenuItem>,
+    <MenuItem key={3} onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>
+  ]
+
   return (
     <div>
       <Paper style={styles} elevation={5}>
@@ -205,10 +212,11 @@ const Approve = () => {
         onClick={handleClose}
         sx={{ '& .MuiMenu-paper': { backgroundColor: '#F9DBDB' } }}
       >
-        <MenuItem onClick={() => handleMenuOption('TRFL')}>Tuffle (TRFL)</MenuItem>
-        <MenuItem onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)</MenuItem>
-        <MenuItem onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)</MenuItem>
-        <MenuItem onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>
+        {(network === 'arbitrum') ?
+          mainnetTokens.map((item, i) => item) :
+          <MenuItem onClick={() => handleMenuOption('TRFL')}>Truffle Testnet (TRFL)</MenuItem>
+        }
+
       </Menu>
 
       <Dialog PaperProps={dialogStyles} open={dialogOpen} >

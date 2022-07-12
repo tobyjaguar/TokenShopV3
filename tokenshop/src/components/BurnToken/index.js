@@ -15,11 +15,7 @@ import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogActions from '@mui/material/DialogActions'
 
-import { groomWei } from '../../utils/groomBalance'
 import { shorten } from '../../utils/shortAddress'
-
-const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
-const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
 
 const tokenABI = require('../../contracts/abi/ERC20TobyToken.json')
 
@@ -36,17 +32,16 @@ const dialogStyles = {
   }
 }
 
-const BurnToken = ({ tokenBalance }) => {
+const BurnToken = ({ tokenAddress, tokenBalance }) => {
   const [dialogOpen, setDialog] = useState(false)
   const [dialogBurnOpen, setDialogBurn] = useState(false)
-  const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('0')
   const [alertText, setAlert] = useState('')
 
   // TOBY token contract
   const contract = useContractWrite(
     {
-      addressOrName: TOBY_ADDRESS,
+      addressOrName: tokenAddress,
       contractInterface: tokenABI,
     },
     'burn',

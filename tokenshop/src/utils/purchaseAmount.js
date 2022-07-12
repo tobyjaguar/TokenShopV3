@@ -9,7 +9,6 @@ export function convertAmount(amount) {
   var hundredBN = BigNumber.from('100')
   decBN = decBN.mul(weiDec).div(hundredBN);
   var intEth = utils.parseUnits(intBN.toString(), 'ether');
-  var decEth = utils.parseEther(decBN.toString(), 'ether');
   return intEth.add(decBN).toString();
 }
 

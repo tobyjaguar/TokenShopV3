@@ -12,7 +12,6 @@ import Paper from '@mui/material/Paper'
 import Dialog from '@mui/material/Dialog'
 import TextField from '@mui/material/TextField'
 
-import { groomWei } from '../../utils/groomBalance'
 import { shorten } from '../../utils/shortAddress'
 
 const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
@@ -34,7 +33,6 @@ const dialogStyles = {
 
 const TransferToken = ({ name, symbol, tokenBalance }) => {
   const [dialogOpen, setDialog] = useState(false)
-  const [valid, setValid] = useState(false)
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('0')
   const [alertText, setAlert] = useState('')

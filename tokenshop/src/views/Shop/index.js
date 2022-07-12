@@ -1,9 +1,10 @@
-import React, { useContext, useEffect, useState} from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   useAccount,
   useBalance,
   useContractRead,
-  useConnect
+  useConnect,
+  useNetwork
 } from 'wagmi'
 
 import Paper from '@mui/material/Paper'
@@ -11,7 +12,6 @@ import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Popover from '@mui/material/Popover'
-import Divider from '@mui/material/Divider'
 
 // import TXModal from '../../components/TXModal'
 import Account from '../../components/Account'
@@ -21,14 +21,14 @@ import BurnToken from '../../components/BurnToken'
 import TransferToken from '../../components/TransferToken'
 import Admin from '../../components/Admin'
 
-import contractsContext from '../../context/Contracts/ContractsContext'
-
 import { groomWei } from '../../utils/groomBalance'
 
-const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
-const SHOP_ADDRESS = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS
+const TOBY_ADDRESS_MAINNET = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS_ARB_MAINNET
+const TOBY_ADDRESS_TESTNET = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS_ARB_TESTNET
+const SHOP_ADDRESS_MAINNET = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS_ARB_MAINNET
+const SHOP_ADDRESS_TESTNET = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS_ARB_TESTNET
+
 const shopABI = require('../../contracts/abi/TokenShop.json')
-const tobyABI = require('../../contracts/abi/ERC20TobyToken.json')
 
 //inline styles
 const styles = {
@@ -40,10 +40,7 @@ const styles = {
 }
 
 const Shop = () => {
-  const [name, setName] = useState('')
   const [owner, setOwner] = useState('')
-  const [symbol, setSymbol] = useState('')
-  const [stock, setStock] = useState('0')
   const [popOpen, setPop] = useState(false)
   const [showApprove, setShowApprove] = useState(false)
   const [showTrade, setShowTrade] = useState(false)
@@ -51,6 +48,8 @@ const Shop = () => {
   const [showTransfer, setShowTransfer] = useState(false)
   const [showAccount, setShowAccount] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
+  const [shopAddress, setShopAddress] = useState('')
+  const [tokenAddress, setTokenAddress] = useState('')
 
   const { data: account } = useAccount()
 
@@ -59,24 +58,37 @@ const Shop = () => {
     watch: true,
   })
 
+  const { isConnected } = useConnect()
+  const { activeChain } = useNetwork()
+
+  useEffect(() => {
+    if (activeChain) {
+      if (activeChain.network === 'arbitrum') {
+        setShopAddress(SHOP_ADDRESS_MAINNET)
+        setTokenAddress(TOBY_ADDRESS_MAINNET)
+      }
+      else {
+        setShopAddress(SHOP_ADDRESS_TESTNET)
+        setTokenAddress(TOBY_ADDRESS_TESTNET)
+      }
+    }
+  }, [activeChain])
+
   const { data: tokenBalance } = useBalance({
     addressOrName: account?.address,
-    token: TOBY_ADDRESS,
+    token: tokenAddress,
     watch: true,
   })
-
-  const { isConnected } = useConnect()
 
   // get token owner
   const shopOwner = useContractRead(
     {
-      addressOrName: SHOP_ADDRESS,
+      addressOrName: shopAddress,
       contractInterface: shopABI
     },
     'getOwner',
     {
       onSuccess(data) {
-        console.log('owner: ', data)
         setOwner(data)
       },
     },
@@ -84,7 +96,7 @@ const Shop = () => {
 
   const shopName = useContractRead(
     {
-      addressOrName: SHOP_ADDRESS,
+      addressOrName: shopAddress,
       contractInterface: shopABI
     },
     'getTokenName',
@@ -92,7 +104,7 @@ const Shop = () => {
 
   const shopSymbol = useContractRead(
     {
-      addressOrName: SHOP_ADDRESS,
+      addressOrName: shopAddress,
       contractInterface: shopABI
     },
     'getTokenSymbol',
@@ -100,17 +112,11 @@ const Shop = () => {
 
   const shopCount = useContractRead(
     {
-      addressOrName: SHOP_ADDRESS,
+      addressOrName: shopAddress,
       contractInterface: shopABI
     },
     'getShopStock',
   )
-
-  const {
-    contracts
-  } = useContext(contractsContext);
-
-  console.log('connected: ', isConnected)
 
   const handlePopClose = () => {
     setPop(false)
@@ -202,7 +208,13 @@ const Shop = () => {
         </Grid>
 
         <Grid item xs={12}>
-          {showApprove ? <Approve /> : null}
+          {showApprove ?
+            <Approve
+              network={activeChain.network}
+              shopAddress={shopAddress}
+            /> :
+            null
+          }
         </Grid>
 
         <Grid item xs={12}>
@@ -213,8 +225,9 @@ const Shop = () => {
           {showTrade ?
             <ShopItem
               account={account}
-              shopAddress={SHOP_ADDRESS}
               name={shopName}
+              network={activeChain.network}
+              shopAddress={shopAddress}
               symbol={shopSymbol}
             /> :
             null
@@ -241,7 +254,13 @@ const Shop = () => {
         </Grid>
 
         <Grid item xs={12}>
-          {showBurn ? <BurnToken tokenBalance={tokenBalance} /> : null}
+          {showBurn ?
+            <BurnToken
+              tokenAddress={tokenAddress}
+              tokenBalance={tokenBalance}
+            /> :
+            null
+          }
         </Grid>
 
         <Grid item xs={12}>
@@ -272,8 +291,9 @@ const Shop = () => {
           {showAdmin ?
             <Admin
               account={account}
-              tokenAddress={TOBY_ADDRESS}
-              shopAddress={SHOP_ADDRESS}
+              network={activeChain.network}
+              tokenAddress={tokenAddress}
+              shopAddress={shopAddress}
             /> :
             null
           }
@@ -283,52 +303,5 @@ const Shop = () => {
     </main>
   )
 }
-
-// <TXModal />
-
-// <Grid item xs={12}>
-//   <Button type="Button" variant="contained" onClick={handleTradeButton}> Trade </Button>
-// </Grid>
-//
-// <Grid item xs={12}>
-//   {showTrade ? <ShopItem /> : null}
-// </Grid>
-//
-// <Grid item xs={12}>
-//   <Button type="Button" variant="contained" onClick={handleBurnButton}> Burn </Button>
-// </Grid>
-//
-// <Grid item xs={12}>
-//   {showBurn ? <BurnToken /> : null}
-// </Grid>
-//
-// <Grid item xs={12}>
-//   <Button type="Button" variant="contained" onClick={handleTransferButton}> Transfer </Button>
-// </Grid>
-//
-// <Grid item xs={12}>
-//   {showTransfer ? <TransferToken /> : null}
-// </Grid>
-//
-// <Grid item xs={12}>
-//   <Button type="Button" variant="contained" onClick={handleAccountButton}> Account </Button>
-// </Grid>
-//
-// <Grid item xs={12}>
-//   {showAccount ? <Account /> : null}
-// </Grid>
-//
-// <Grid item xs={12}>
-// {isConnected ?
-//     (owner === data?.address) ?
-//       <Button type="Button" variant="contained" onClick={handleAdminButton}> Admin </Button>
-//     : null
-//   : null
-// }
-// </Grid>
-//
-// <Grid item xs={12}>
-//   {showAdmin ? <Admin /> : null}
-// </Grid>
 
 export default Shop;

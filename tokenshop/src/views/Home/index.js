@@ -1,13 +1,8 @@
-import React, { useContext, useEffect, useState} from 'react'
 import { Link } from 'react-router-dom'
 
 import Paper from '@mui/material/Paper'
 import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
-import Divider from '@mui/material/Divider'
-
-import {groomWei} from '../../utils/groomBalance'
 
 const logo = require('../../assets/Shop.jpg')
 
@@ -21,60 +16,6 @@ const styles = {
 }
 
 const Home = () => {
-
-  const handleInputChange = (event) => {
-    this.setState({ [event.target.name]: event.target.value })
-  }
-
-  const setShopKeeper = () => {
-    if (this.props.TokenShop.owner[this.state.dataKeyOwner] !== undefined && this.state.dataKeyOwner !== null) {
-      this.setState({
-        shopKeeper: this.props.TokenShop.owner[this.state.dataKeyOwner].value
-      })
-    }
-  }
-
-  const setTokenBalance = () => {
-    if (this.props.TokenShop.getTokenBalance[this.state.dataKeyTknBalance] !== undefined && this.state.dataKeyTknBalance !== null) {
-      this.setState({
-        tokenBalance: this.props.TokenShop.getTokenBalance[this.state.dataKeyTknBalance].value
-      })
-    }
-  }
-
-  const handleAccountButton = () => {
-      this.setState({
-        showAccount: !this.state.showAccount
-      })
-  }
-
-  const handleShopButton = () => {
-    this.setState({
-      showShop: !this.state.showShop
-    })
-  }
-
-  const handleBurnButton = () => {
-    this.setState({
-      showBurn: !this.state.showBurn
-    })
-  }
-
-  const handleTransferButton = () => {
-    this.setState({
-      showTransfer: !this.state.showTransfer
-    })
-  }
-
-  const handleAdminButton = () => {
-    var owner
-    owner = this.props.accounts[0]
-    if (this.state.shopKeeper === owner) {
-      this.setState({
-        showAdmin: !this.state.showAdmin
-      })
-    }
-  }
 
   return (
     <main className="container">

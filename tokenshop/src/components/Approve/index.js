@@ -19,9 +19,8 @@ const APPROVAL_AMOUNT = process.env.REACT_APP_APPROVAL_AMOUNT
 const USDC_ADDRESS = process.env.REACT_APP_USDC_TOKEN_CONTRACT_ADDRESS
 const USDT_ADDRESS = process.env.REACT_APP_USDT_TOKEN_CONTRACT_ADDRESS
 const DAI_ADDRESS = process.env.REACT_APP_DAI_TOKEN_CONTRACT_ADDRESS
-const TRFL_ADDRESS = process.env.REACT_APP_TRFL_TOKEN_CONTRACT_ADDRESS
-const SHOP_ADDRESS_MAINNET = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS_ARB_MAINNET
-const SHOP_ADDRESS_TESTNET = process.env.REACT_APP_TOKEN_SHOP_CONTRACT_ADDRESS_ARB_TESTNET
+const TRFL_ADDRESS_MAINNET = process.env.REACT_APP_TRFL_TOKEN_CONTRACT_ADDRESS_ARB_MAINNET
+const TRFL_ADDRESS_TESTNET = process.env.REACT_APP_TRFL_TOKEN_CONTRACT_ADDRESS_ARB_TESTNET
 
 const tokenABI = require('../../contracts/abi/TruffleToken.json')
 
@@ -41,15 +40,19 @@ const dialogStyles = {
 
 const Approve = ({ network, shopAddress }) => {
   const [anchorEl, setAnchorEl] = useState(null)
-  const open = Boolean(anchorEl)
   const [dialogOpen, setDialog] = useState(false)
   const [selectedToken, setSelectedToken] = useState('')
   const [alertText, setText] = useState('')
 
-  // TRFL (for testnet)
+  const open = Boolean(anchorEl)
+  const trflAddress = (network === 'arbitrum') ?
+    TRFL_ADDRESS_MAINNET :
+    TRFL_ADDRESS_TESTNET
+
+  // TRFL
   const trflApprove = useContractWrite(
     {
-      addressOrName: TRFL_ADDRESS,
+      addressOrName: trflAddress,
       contractInterface: tokenABI,
     },
     'approve',
@@ -184,7 +187,8 @@ const Approve = ({ network, shopAddress }) => {
   const mainnetTokens = [
     <MenuItem key={1} onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)</MenuItem>,
     <MenuItem key={2} onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)</MenuItem>,
-    <MenuItem key={3} onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>
+    <MenuItem key={3} onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>,
+    <MenuItem key={4} onClick={() => handleMenuOption('TRFL')}>Truffle Token (TRFL)</MenuItem>
   ]
 
   return (

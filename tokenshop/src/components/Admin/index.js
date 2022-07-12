@@ -240,11 +240,23 @@ const Admin = ({ account, network, tokenAddress, shopAddress }) => {
               onChange={handleInputChange}
               variant='outlined'
               style={{margin: '5px auto'}}
+              disabled={(network === 'arbitrum') ? true : false}
             />
             <br/>
-            (Mint Tokens to the store)
+            {
+              (network === 'arbitrum') ?
+              <>Minting disabled on L2 Mainnet</> :
+              <>(Mint Tokens to the store)</>
+            }
             <br/><br/>
-            <Button type="Button" variant="contained" onClick={handleMintButton}>Mint</Button>
+            <Button
+              type="Button"
+              variant="contained"
+              onClick={handleMintButton}
+              disabled={(network === 'arbitrum') ? true : false}
+            >
+              Mint
+            </Button>
           </Grid>
 
           <Grid item xs={12}>
@@ -281,14 +293,17 @@ const Admin = ({ account, network, tokenAddress, shopAddress }) => {
             onClick={handleClose}
             sx={{ '& .MuiMenu-paper': { backgroundColor: '#F9DBDB' } }}
           >
-            <MenuItem
-              onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)
+            <MenuItem onClick={() => handleMenuOption('USDC')}>
+              US Dollar Coin (USDC)
             </MenuItem>
-            <MenuItem
-              onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)
+            <MenuItem onClick={() => handleMenuOption('USDT')}>
+                US Dollar Tether (USDT)
             </MenuItem>
-            <MenuItem
-              onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)
+            <MenuItem onClick={() => handleMenuOption('DAI')}>
+              Dai Stable Coin (DAI)
+            </MenuItem>
+            <MenuItem onClick={() => handleMenuOption('TRFL')}>
+              Truffle Token (TRFL)
             </MenuItem>
           </Menu>
         </Grid>

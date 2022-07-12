@@ -12,8 +12,9 @@ import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Popover from '@mui/material/Popover'
+import Alert from '@mui/material/Alert'
+import AlertTitle from '@mui/material/AlertTitle'
 
-// import TXModal from '../../components/TXModal'
 import Account from '../../components/Account'
 import Approve from '../../components/Approve'
 import ShopItem from '../../components/ShopItem'
@@ -48,6 +49,7 @@ const Shop = () => {
   const [showTransfer, setShowTransfer] = useState(false)
   const [showAccount, setShowAccount] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
+  const [showBurnAlert, setShowBurnAlert] = useState(false)
   const [shopAddress, setShopAddress] = useState('')
   const [tokenAddress, setTokenAddress] = useState('')
 
@@ -137,10 +139,18 @@ const Shop = () => {
   }
 
   const handleBurnButton = () => {
-    (isConnected) ?
-      setShowBurn(!showBurn)
-    :
-      setPop(true)
+    if (activeChain?.network === 'arbitrum') {
+      (isConnected) ?
+        setShowBurnAlert(true)
+      :
+        setPop(true)
+    }
+    else {
+      (isConnected) ?
+        setShowBurn(!showBurn)
+      :
+        setPop(true)
+    }
   }
 
   const handleTransferButton = () => {
@@ -243,6 +253,7 @@ const Shop = () => {
             <TransferToken
               name={shopName}
               symbol={shopSymbol}
+              tokenAddress={tokenAddress}
               tokenBalance={tokenBalance}
             /> :
             null
@@ -254,13 +265,22 @@ const Shop = () => {
         </Grid>
 
         <Grid item xs={12}>
-          {showBurn ?
+        {(activeChain?.network === 'arbitrum') ?
+          <>{showBurnAlert ?
+            <Alert severity='info' onClose={() => setShowBurnAlert(false)}>
+              <AlertTitle>Not Available</AlertTitle>
+              Cannot burn tokens on L2
+            </Alert> :
+            null
+          }</> :
+          <>{showBurn ?
             <BurnToken
               tokenAddress={tokenAddress}
               tokenBalance={tokenBalance}
             /> :
             null
-          }
+          }</>
+        }
         </Grid>
 
         <Grid item xs={12}>

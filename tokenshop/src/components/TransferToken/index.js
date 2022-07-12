@@ -14,8 +14,6 @@ import TextField from '@mui/material/TextField'
 
 import { shorten } from '../../utils/shortAddress'
 
-const TOBY_ADDRESS = process.env.REACT_APP_TOBY_TOKEN_CONTRACT_ADDRESS
-
 const tokenABI = require('../../contracts/abi/ERC20TobyToken.json')
 
 //inline styles
@@ -31,7 +29,7 @@ const dialogStyles = {
   }
 }
 
-const TransferToken = ({ name, symbol, tokenBalance }) => {
+const TransferToken = ({ name, symbol, tokenAddress, tokenBalance }) => {
   const [dialogOpen, setDialog] = useState(false)
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('0')
@@ -40,7 +38,7 @@ const TransferToken = ({ name, symbol, tokenBalance }) => {
   // instantiate contract
   const contract = useContractWrite(
     {
-      addressOrName: TOBY_ADDRESS,
+      addressOrName: tokenAddress,
       contractInterface: tokenABI,
     },
     'transfer',

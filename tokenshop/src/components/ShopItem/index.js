@@ -156,7 +156,7 @@ const ShopItem = ({ account, name, network, shopAddress, symbol }) => {
       handleDialogOpen()
     }
     else if (amountBN.gt(zero)) {
-      // await purchaseTx.writeAsync()
+      await purchaseTx.writeAsync()
     } else {
       setText("Oops! Check purchase amount.")
       handleDialogOpen()

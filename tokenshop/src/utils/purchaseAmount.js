@@ -1,25 +1,23 @@
 import { BigNumber, utils } from 'ethers';
 
-export function convertAmount(amount) {
-  var int = Math.floor(amount);
-  var dec = Math.round((amount - int) * 100);
-  var intBN = BigNumber.from(int);
-  var decBN = BigNumber.from(dec);
-  var weiDec = utils.parseEther('1');
-  var hundredBN = BigNumber.from('100')
-  decBN = decBN.mul(weiDec).div(hundredBN);
-  var intEth = utils.parseUnits(intBN.toString(), 'ether');
-  return intEth.add(decBN).toString();
+export function convertAmount(amount, decimals) {
+  let int = Math.floor(amount);
+  let dec = Math.round((amount - int) * 100);
+  let intBN = BigNumber.from(int);
+  let decBN = BigNumber.from(dec);
+  let intDec = utils.parseUnits(decBN.toString(), (decimals - 2));
+  let intEth = utils.parseUnits(intBN.toString(), decimals);
+  return intEth.add(intDec).toString();
 }
 
 export function withDecimal(amount) {
-  var amountBN = BigNumber.from(amount)
-  var oneEth = BigNumber.from(utils.parseUnits('1', 'ether'));
-  var whole
-  var decimal
+  let amountBN = BigNumber.from(amount)
+  let oneEth = BigNumber.from(utils.parseUnits('1', 'ether'));
+  let whole
+  let decimal
   if (amountBN.lt(oneEth)) {
     whole = '0'
-    var tenBN = BigNumber.from('10')
+    let tenBN = BigNumber.from('10')
     if (amountBN.lt(oneEth.div(tenBN))) {
       decimal = '0' + amount
     }

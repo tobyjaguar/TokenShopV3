@@ -23,6 +23,13 @@ import { convertAmount, withDecimal } from '../../utils/purchaseAmount'
 
 const shopABI = require('../../contracts/abi/TokenShop.json')
 
+const TOKEN_DECIMALS = {
+    'USDC': 6,
+    'USDT': 6,
+    'DAI': 18,
+    'TRFL': 18
+}
+
 //inline styles
 const styles = {
     backgroundColor: '#F9DBDB',
@@ -77,6 +84,11 @@ const ShopItem = ({ account, name, network, shopAddress, symbol }) => {
     },
   })
 
+  // on page load
+  useEffect(() => {
+
+  }, [])
+
   useEffect (() => {
     async function getAllowance() {
       let allowanceBN = await contract.getStableAllowance(
@@ -85,7 +97,10 @@ const ShopItem = ({ account, name, network, shopAddress, symbol }) => {
         )
       setAllowance(allowanceBN.toString())
     }
-    if (selectedToken !== '') getAllowance()
+    if (selectedToken !== '') {
+      getAllowance()
+      setWeiAmount(convertAmount(buyAmount, TOKEN_DECIMALS[selectedToken]))
+    }
   }, [account.address, contract, selectedToken])
 
   const handleDialogOpen = () => {
@@ -111,9 +126,13 @@ const ShopItem = ({ account, name, network, shopAddress, symbol }) => {
   const handleInputChange = (event) => {
     if (event.target.value.match(/^[0-9.]{1,5}$/)){
       if (0 <= event.target.value && event.target.value <= 100) {
-        var amount = Math.abs(parseFloat(event.target.value).toFixed(2))
+        let amount = Math.abs(parseFloat(event.target.value).toFixed(2))
         setBuyAmount(amount)
-        setWeiAmount(convertAmount(amount))
+        setWeiAmount(
+          convertAmount(
+            amount, 
+            (selectedToken === '') ? 18 : TOKEN_DECIMALS[selectedToken])
+        )
       } else {
           setBuyAmount(0)
           setWeiAmount('0')
@@ -137,7 +156,7 @@ const ShopItem = ({ account, name, network, shopAddress, symbol }) => {
       handleDialogOpen()
     }
     else if (amountBN.gt(zero)) {
-      await purchaseTx.writeAsync()
+      // await purchaseTx.writeAsync()
     } else {
       setText("Oops! Check purchase amount.")
       handleDialogOpen()
@@ -156,10 +175,9 @@ const ShopItem = ({ account, name, network, shopAddress, symbol }) => {
   const mainnetTokens = [
     <MenuItem key={1} onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)</MenuItem>,
     <MenuItem key={2} onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)</MenuItem>,
-    <MenuItem key={3} onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>,
-    <MenuItem key={4} onClick={() => handleMenuOption('TRFL')}>Truffle Token (TRFL)</MenuItem>
+    <MenuItem key={3} onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>
   ]
-
+  
   return (
     <div>
     <Paper style={styles} elevation={5}>

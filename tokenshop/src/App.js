@@ -7,6 +7,7 @@ import {
   defaultChains,
   configureChains
 } from 'wagmi'
+
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { ToastContainer } from 'react-toastify';
 

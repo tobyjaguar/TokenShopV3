@@ -175,7 +175,8 @@ const ShopItem = ({ account, name, network, shopAddress, symbol }) => {
   const mainnetTokens = [
     <MenuItem key={1} onClick={() => handleMenuOption('USDC')}>US Dollar Coin (USDC)</MenuItem>,
     <MenuItem key={2} onClick={() => handleMenuOption('USDT')}>US Dollar Tether (USDT)</MenuItem>,
-    <MenuItem key={3} onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>
+    <MenuItem key={3} onClick={() => handleMenuOption('DAI')}>Dai Stable Coin (DAI)</MenuItem>,
+    <MenuItem key={4} onClick={() => handleMenuOption('TRFL')}>Truffle Token (TRFL)</MenuItem>
   ]
   
   return (

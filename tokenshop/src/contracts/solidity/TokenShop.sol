@@ -1,6 +1,5 @@
 pragma solidity ^0.5.17;
 
-// ShopMath is SafeMath with a 0.5.17 pragma
 import './ShopMath.sol';
 
 interface Token {
@@ -115,12 +114,12 @@ contract TokenShop is Ownable {
     return tokenContract.totalSupply();
   }
 
-  function getTokenBalance(address account_)
+  function getTokenBalance(string memory tokenName_, address account_)
     public
     view
     returns (uint256)
   {
-    Token tokenContract = Token(tokens[native]);
+    Token tokenContract = Token(tokens[tokenName_]);
     return tokenContract.balanceOf(account_);
   }
 
@@ -153,22 +152,25 @@ contract TokenShop is Ownable {
 
   //User functions
 
-  function buyToken(string memory name_, uint256 amount_)
+  function buyToken(string memory swapTokenName_, uint256 nativeTokenAmount_)
     public
     returns (bool)
   {
     // check stable token known to shop
-    require(tokens[name_] != address(0), "stable token not recognized");
+    require(tokens[swapTokenName_] != address(0), "stable token not recognized");
     Token nativeTokenContract = Token(tokens[native]);
-    Token stableTokenContract = Token(tokens[name_]);
-    //check not asking for more than shop balance
-    require(nativeTokenContract.balanceOf(address(this)) >= amount_, "insufficient shop balance");
-    //check not asking for more than user blaance
-    require(stableTokenContract.balanceOf(msg.sender) >= amount_, "insufficient user balance");
-    require(stableTokenContract.allowance(msg.sender, address(this)) >= amount_, "insufficient allowance");
-    require(stableTokenContract.transferFrom(msg.sender, address(this), amount_), "stable token transfer failed");
-    require(nativeTokenContract.transfer(msg.sender, amount_), "native token transfer filed");
-    emit LogBuyToken(msg.sender, amount_);
+    Token stableTokenContract = Token(tokens[swapTokenName_]);
+    // check not asking for more than shop balance
+    // amount expects 18 decimal resolution
+    require(nativeTokenContract.balanceOf(address(this)) >= nativeTokenAmount_, "insufficient shop balance");
+    // check not asking for more than user balance
+    uint8 _stableDecimals = stableTokenContract.decimals();
+    uint256 _stableAmount = nativeTokenAmount_ / 10**(18 - uint256(_stableDecimals));
+    require(stableTokenContract.balanceOf(msg.sender) >= _stableAmount, "insufficient user balance");
+    require(stableTokenContract.allowance(msg.sender, address(this)) >= _stableAmount, "insufficient allowance");
+    require(stableTokenContract.transferFrom(msg.sender, address(this), _stableAmount), "stable token transfer failed");
+    require(nativeTokenContract.transfer(msg.sender, nativeTokenAmount_), "native token transfer filed");
+    emit LogBuyToken(msg.sender, nativeTokenAmount_);
     return true;
   }
 

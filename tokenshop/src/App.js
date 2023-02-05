@@ -4,10 +4,9 @@ import {
   WagmiConfig,
   chain,
   createClient,
-  defaultChains,
   configureChains
 } from 'wagmi'
-
+import { arbitrum, arbitrumGoerli } from '@wagmi/chains'
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { ToastContainer } from 'react-toastify';
 

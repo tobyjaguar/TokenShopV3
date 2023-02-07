@@ -6,7 +6,7 @@ import {
   createClient,
   WagmiConfig
 } from 'wagmi'
-import { arbitrum, arbitrumGoerli } from '@wagmi/chains'
+
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { ToastContainer } from 'react-toastify';
 
@@ -26,31 +26,6 @@ import './App.css'
 import '@rainbow-me/rainbowkit/styles.css'
 import 'react-toastify/dist/ReactToastify.css';
 
-// const arbitrumRinkeby = {
-//   id: chainId.arbitrumRinkeby,
-//   name: 'Arbitrum Rinkeby',
-//   network: 'arbitrum-rinkeby',
-//   nativeCurrency: {
-//     name: 'Arbitrum Rinkeby Ether',
-//     symbol: 'ARETH',
-//     decimals: 18,
-//   },
-//   rpcUrls: {
-//     alchemy: alchemyRpcUrls.arbitrumRinkeby,
-//     infura: infuraRpcUrls.arbitrumRinkeby,
-//     default: 'https://rinkeby.arbitrum.io/rpc',
-//   },
-//   blockExplorers: {
-//     arbitrum: {
-//       name: 'Arbitrum Explorer',
-//       url: 'https://rinkeby-explorer.arbitrum.io',
-//     },
-//     etherscan: etherscanBlockExplorers.arbitrumRinkeby,
-//     default: etherscanBlockExplorers.arbitrumRinkeby,
-//   },
-//   testnet: true,
-// }
-
 const arbitrumNitroGoerliChain = {
   id: 421_613,
   name: 'Arbitrum Nitro Goerli',
@@ -65,7 +40,7 @@ const arbitrumNitroGoerliChain = {
   },
   blockExplorers: {
     default: 'https://goerli.arbiscan.io',
-    etherscan: 'https://goerli-rollup-explorer.arbitrum.io',
+    blockscout: 'https://goerli-rollup-explorer.arbitrum.io',
   },
   testnet: true,
 };
